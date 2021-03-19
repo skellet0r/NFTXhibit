@@ -7,6 +7,11 @@
 """
 
 
+event Approval:
+    _owner: indexed(address)
+    _approved: indexed(address)
+    _tokenId: indexed(uint256)
+
 event ApprovalForAll:
     _owner: indexed(address)
     _operator: indexed(address)
@@ -110,3 +115,24 @@ def setApprovalForAll(_operator: address, _approved: bool):
     self.isApprovedForAll[msg.sender][_operator] = _approved
 
     log ApprovalForAll(msg.sender, _operator, _approved)
+
+
+@payable
+@external
+def approve(_approved: address, _tokenId: uint256):
+    """
+    @notice Change or reaffirm the approved address for an NFT
+    @dev The zero address indicates there is no approved address.
+        Throws unless `msg.sender` is the current NFT owner, or an authorized
+        operator of the current owner.
+    @param _approved The new approved NFT controller
+    @param _tokenId The NFT to approve
+    """
+    token_owner: address = self.ownerOf[_tokenId]
+    assert (
+        msg.sender == token_owner or self.isApprovedForAll[token_owner][msg.sender]
+    )  # dev: Caller is neither owner nor operator
+
+    self.getApproved[_tokenId] = _approved
+
+    log Approval(token_owner, _approved, _tokenId)

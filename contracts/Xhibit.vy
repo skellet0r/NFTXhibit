@@ -8,6 +8,7 @@
 
 
 balanceOf: public(HashMap[address, uint256])
+ownerOf: public(HashMap[uint256, address])
 
 
 @view

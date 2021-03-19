@@ -7,6 +7,12 @@
 """
 
 
+event ApprovalForAll:
+    _owner: indexed(address)
+    _operator: indexed(address)
+    _approved: bool
+
+
 balanceOf: public(HashMap[address, uint256])
 ownerOf: public(HashMap[uint256, address])
 isApprovedForAll: public(HashMap[address, HashMap[address, bool]])
@@ -24,3 +30,18 @@ def supportsInterface(interfaceID: bytes32) -> bool:
     return interfaceID in [
         0x0000000000000000000000000000000000000000000000000000000001FFC9A7,  # ERC-165
     ]
+
+
+@external
+def setApprovalForAll(_operator: address, _approved: bool):
+    """
+    @notice Enable or disable approval for a third party ("operator") to manage
+        all of `msg.sender`'s assets
+    @dev Emits the ApprovalForAll event. The contract MUST allow
+        multiple operators per owner.
+    @param _operator Address to add to the set of authorized operators
+    @param _approved True if the operator is approved, False to revoke approval
+    """
+    self.isApprovedForAll[msg.sender][_operator] = _approved
+
+    log ApprovalForAll(msg.sender, _operator, _approved)

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.4.24;
+pragma solidity ^0.7.4;
 
 /// @title ERC998ERC721 Top-Down Composable Non-Fungible Token
 /// @dev See https://github.com/ethereum/EIPs/blob/master/EIPS/eip-998.md

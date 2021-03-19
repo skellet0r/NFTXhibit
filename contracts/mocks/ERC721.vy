@@ -25,10 +25,6 @@ event ApprovalForAll:
     _operator: indexed(address)
     _approved: bool
 
-event OwnershipTransferred:
-    previousOwner: indexed(address)
-    newOwner: indexed(address)
-
 event Transfer:
     _from: indexed(address)
     _to: indexed(address)

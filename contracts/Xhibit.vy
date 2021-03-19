@@ -16,6 +16,7 @@ event ApprovalForAll:
 balanceOf: public(HashMap[address, uint256])
 ownerOf: public(HashMap[uint256, address])
 isApprovedForAll: public(HashMap[address, HashMap[address, bool]])
+getApproved: public(HashMap[uint256, address])
 
 
 @view

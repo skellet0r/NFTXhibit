@@ -1,0 +1,40 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+default_stages: [commit]
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v3.2.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+      - id: pretty-format-json
+        args: [--autofix]
+      - id: check-added-large-files
+        args: ["--maxkb=50000"]
+      - id: no-commit-to-branch
+      - id: detect-private-key
+      - id: name-tests-test
+  - repo: https://github.com/psf/black
+    rev: 19.10b0
+    hooks:
+      - id: black
+  - repo: https://gitlab.com/PyCQA/flake8
+    rev: 3.8.4
+    hooks:
+      - id: flake8
+  - repo: https://github.com/commitizen-tools/commitizen
+    rev: v2.14.0
+    hooks:
+      - id: commitizen
+        stages: [commit-msg]
+  - repo: https://github.com/pre-commit/mirrors-eslint
+    rev: v7.19.0
+    hooks:
+      - id: eslint
+        additional_dependencies:
+          - eslint@7.19.0
+          - eslint-config-google@0.14.0
+          - eslint-plugin-react@7.22.0
+          - eslint-plugin-react-hooks@4.2.0

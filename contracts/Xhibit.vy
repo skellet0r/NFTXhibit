@@ -16,6 +16,13 @@ event OwnershipTransferred:
     previousOwner: indexed(address)
     newOwner: indexed(address)
 
+event Transfer:
+    _from: indexed(address)
+    _to: indexed(address)
+    _tokenId: indexed(uint256)
+
+
+token_id_tracker: uint256
 
 owner: public(address)
 
@@ -28,6 +35,23 @@ getApproved: public(HashMap[uint256, address])
 @external
 def __init__():
     self.owner = msg.sender
+
+
+@internal
+def _mint(_to: address):
+    """
+    @dev Internal function for minting new tokens, reverts if
+        `_to` is the zero address.
+    @param _to Address which will receive the new token
+    """
+    assert _to != ZERO_ADDRESS  # dev: Minting to zero address disallowed
+
+    token_id: uint256 = self.token_id_tracker
+    self.balanceOf[_to] += 1
+    self.ownerOf[token_id] = _to
+    self.token_id_tracker += 1
+
+    log Transfer(ZERO_ADDRESS, _to, token_id)
 
 
 @view
@@ -58,6 +82,19 @@ def transferOwnership(_newOwner: address):
     self.owner = _newOwner
 
     log OwnershipTransferred(previous_owner, _newOwner)
+
+
+@external
+def mint(_to: address):
+    """
+    @notice External utility function for minting a new token
+    @dev Reverts if caller is not the contract owner, or `_to` is
+        zero address
+    @param _to Address which receives the new token
+    """
+    assert msg.sender == self.owner  # dev: Caller is not owner
+
+    self._mint(_to)
 
 
 @external

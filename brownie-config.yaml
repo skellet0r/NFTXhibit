@@ -46,7 +46,7 @@ reports:
 
 hypothesis:
   deadline: null
-  max_examples: 50
+  max_examples: 20
   report_multiple_bugs: False
   stateful_step_count: 10
   phases:

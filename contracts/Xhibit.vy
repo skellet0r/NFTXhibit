@@ -7,6 +7,12 @@
 """
 
 
+interface TokenReceiver:
+    def onERC721Received(
+        _operator: address, _from: address, _tokenId: uint256, _data: Bytes[1024]
+    ) -> bytes32: nonpayable
+
+
 event Approval:
     _owner: indexed(address)
     _approved: indexed(address)
@@ -179,3 +185,40 @@ def transferFrom(_from: address, _to: address, _tokenId: uint256):
     )  # dev: Caller is neither owner nor operator nor approved
 
     self._transferFrom(_from, _to, _tokenId)
+
+
+@payable
+@external
+def safeTransferFrom(
+    _from: address, _to: address, _tokenId: uint256, _data: Bytes[1024] = b""
+):
+    """
+    @notice Transfers the ownership of an NFT from one address to another address
+    @dev Throws unless `msg.sender` is the current owner, an authorized
+        operator, or the approved address for this NFT. Throws if `_from` is
+        not the current owner. Throws if `_to` is the zero address. Throws if
+        `_tokenId` is not a valid NFT. When transfer is complete, this function
+        checks if `_to` is a smart contract (code size > 0). If so, it calls
+        `onERC721Received` on `_to` and throws if the return value is not
+        `bytes4(keccak256("onERC721Received(address,address,uint256,bytes)"))`.
+    @param _from The current owner of the NFT
+    @param _to The new owner
+    @param _tokenId The NFT to transfer
+    @param _data Additional data with no specified format, sent in call to `_to`
+    """
+    token_owner: address = self.ownerOf[_tokenId]
+    assert (
+        msg.sender == token_owner
+        or self.isApprovedForAll[token_owner][msg.sender]
+        or self.getApproved[_tokenId] == msg.sender
+    )  # dev: Caller is neither owner nor operator nor approved
+
+    self._transferFrom(_from, _to, _tokenId)
+
+    if _to.is_contract:
+        return_value: bytes32 = TokenReceiver(_to).onERC721Received(
+            msg.sender, _from, _tokenId, _data
+        )
+        assert return_value == method_id(
+            "onERC721Received(address,address,uint256,bytes)", output_type=bytes32
+        )  # dev: Can not transfer to non-ERC721Receiver

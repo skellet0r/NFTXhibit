@@ -59,6 +59,24 @@ def _mint(_to: address):
     log Transfer(ZERO_ADDRESS, _to, token_id)
 
 
+@internal
+def _transferFrom(_from: address, _to: address, _tokenId: uint256):
+    """
+    @dev Internal function for transferring tokens between accounts.
+    @param _from Token owner address
+    @param _to Token recipient address
+    @param _tokenId Token to transfer
+    """
+    assert _to != ZERO_ADDRESS  # dev: Transfers to ZERO_ADDRESS not permitted
+
+    self.getApproved[_tokenId] = ZERO_ADDRESS
+    self.balanceOf[_from] -= 1
+    self.balanceOf[_to] += 1
+    self.ownerOf[_tokenId] = _to
+
+    log Transfer(_from, _to, _tokenId)
+
+
 @view
 @external
 def supportsInterface(interfaceID: bytes32) -> bool:
@@ -136,3 +154,28 @@ def approve(_approved: address, _tokenId: uint256):
     self.getApproved[_tokenId] = _approved
 
     log Approval(token_owner, _approved, _tokenId)
+
+
+@payable
+@external
+def transferFrom(_from: address, _to: address, _tokenId: uint256):
+    """
+    @notice Transfer ownership of an NFT -- THE CALLER IS RESPONSIBLE
+        TO CONFIRM THAT `_to` IS CAPABLE OF RECEIVING NFTS OR ELSE
+        THEY MAY BE PERMANENTLY LOST
+    @dev Throws unless `msg.sender` is the current owner, an authorized
+        operator, or the approved address for this NFT. Throws if `_from` is
+        not the current owner. Throws if `_to` is the zero address. Throws if
+        `_tokenId` is not a valid NFT.
+    @param _from The current owner of the NFT
+    @param _to The new owner
+    @param _tokenId The NFT to transfer
+    """
+    token_owner: address = self.ownerOf[_tokenId]
+    assert (
+        msg.sender == token_owner
+        or self.isApprovedForAll[token_owner][msg.sender]
+        or self.getApproved[_tokenId] == msg.sender
+    )  # dev: Caller is neither owner nor operator nor approved
+
+    self._transferFrom(_from, _to, _tokenId)

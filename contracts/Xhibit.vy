@@ -7,6 +7,9 @@
 """
 
 
+balanceOf: public(HashMap[address, uint256])
+
+
 @view
 @external
 def supportsInterface(interfaceID: bytes32) -> bool:

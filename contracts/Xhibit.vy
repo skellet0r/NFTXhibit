@@ -12,11 +12,22 @@ event ApprovalForAll:
     _operator: indexed(address)
     _approved: bool
 
+event OwnershipTransferred:
+    previousOwner: indexed(address)
+    newOwner: indexed(address)
+
+
+owner: public(address)
 
 balanceOf: public(HashMap[address, uint256])
 ownerOf: public(HashMap[uint256, address])
 isApprovedForAll: public(HashMap[address, HashMap[address, bool]])
 getApproved: public(HashMap[uint256, address])
+
+
+@external
+def __init__():
+    self.owner = msg.sender
 
 
 @view
@@ -30,7 +41,23 @@ def supportsInterface(interfaceID: bytes32) -> bool:
     """
     return interfaceID in [
         0x0000000000000000000000000000000000000000000000000000000001FFC9A7,  # ERC-165
+        0x000000000000000000000000000000000000000000000000000000007F5828D0,  # ERC-173
     ]
+
+
+@external
+def transferOwnership(_newOwner: address):
+    """
+    @notice Set the address of the new owner of the contract
+    @dev Set `_newOwner` to address(0) to renounce any ownership.
+    @param _newOwner The address of the new owner of the contract
+    """
+    assert msg.sender == self.owner  # dev: Caller is not owner
+
+    previous_owner: address = self.owner
+    self.owner = _newOwner
+
+    log OwnershipTransferred(previous_owner, _newOwner)
 
 
 @external

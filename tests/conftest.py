@@ -39,6 +39,12 @@ def xhibit(alice: Account, Xhibit: ContractContainer) -> Contract:
     return alice.deploy(Xhibit)
 
 
+@pytest.fixture(scope="module")
+def nft(alice: Account, ERC721: ContractContainer) -> Contract:
+    """Instance of a mock ERC721 contract."""
+    return alice.deploy(ERC721)
+
+
 @pytest.fixture(autouse=True)
 def isolate(fn_isolation):
     """Isolate each test function."""

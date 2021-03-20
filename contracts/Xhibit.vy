@@ -9,6 +9,9 @@ from vyper.interfaces import ERC721
 
 
 TOKEN_RECEIVED: constant(Bytes[4]) = 0x150b7a02
+ERC998_MAGIC_VALUE: constant(
+    bytes32
+) = 0xCD740DB500000000000000000000000000000000000000000000000000000000
 
 
 interface ERC721TokenReceiver:
@@ -18,6 +21,7 @@ interface ERC721TokenReceiver:
 
 
 struct ChildTokenData:
+    parent_token_address: address
     parent_token_id: uint256
     is_held: bool
 
@@ -253,6 +257,7 @@ def _receive_child(
     ].is_held  # dev: Child token already possessed
 
     self.child_token_data[_child_contract][_child_token_id].is_held = True
+    self.child_token_data[_child_contract][_child_token_id].parent_token_address = self
     self.child_token_data[_child_contract][_child_token_id].parent_token_id = _token_id
 
     log ReceivedChild(_from, _token_id, _child_contract, _child_token_id)
@@ -261,7 +266,7 @@ def _receive_child(
 @external
 def onERC721Received(
     _operator: address, _from: address, _childTokenId: uint256, _data: Bytes[32]
-) -> bytes32:
+) -> Bytes[4]:
     """
     @notice Handle the receipt of an NFT
     @dev The ERC721 smart contract calls this function after a `transfer`.
@@ -307,3 +312,46 @@ def getChild(
 
     ERC721(_childContract).transferFrom(_from, self, _childTokenId)
     self._receive_child(_from, _tokenId, _childContract, _childTokenId)
+
+
+@view
+@internal
+def _ownerOfChild(
+    _childContract: address, _childTokenId: uint256
+) -> (address, uint256):
+    assert self.child_token_data[_childContract][
+        _childTokenId
+    ].is_held  # dev: Token is not held by self
+
+    parent_token_address: address = self.child_token_data[_childContract][
+        _childTokenId
+    ].parent_token_address
+    parent_token_id: uint256 = self.child_token_data[_childContract][
+        _childTokenId
+    ].parent_token_id
+    return (parent_token_address, parent_token_id)
+
+
+@view
+@external
+def ownerOfChild(_childContract: address, _childTokenId: uint256) -> (bytes32, uint256):
+    """
+    @notice Get the parent tokenId of a child token.
+    @param _childContract The contract address of the child token.
+    @param _childTokenId The tokenId of the child.
+    @return The parent address of the parent token and ERC998 magic value
+    @return The parent tokenId of _tokenId
+    """
+    parent_token_address: address = empty(address)
+    parent_token_id: uint256 = empty(uint256)
+
+    parent_token_address, parent_token_id = self._ownerOfChild(
+        _childContract, _childTokenId
+    )
+    parent_token_address_num: uint256 = convert(parent_token_address, uint256)
+    magic_value_num: uint256 = convert(ERC998_MAGIC_VALUE, uint256)
+    parent_addr_and_magic_val: uint256 = bitwise_or(
+        magic_value_num, parent_token_address_num
+    )
+
+    return (convert(parent_addr_and_magic_val, bytes32), parent_token_id)

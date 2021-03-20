@@ -30,10 +30,22 @@ event OwnershipTransferred:
     previousOwner: indexed(address)
     newOwner: indexed(address)
 
+event ReceivedChild:
+    _from: indexed(address)
+    _toTokenId: indexed(uint256)
+    _childContract: indexed(address)
+    _childTokenId: uint256
+
 event Transfer:
     _from: indexed(address)
     _to: indexed(address)
     _tokenId: indexed(uint256)
+
+event TransferChild:
+    _fromTokenId: indexed(uint256)
+    _to: indexed(address)
+    _childContract: indexed(address)
+    _childTokenId: uint256
 
 
 token_id_tracker: uint256

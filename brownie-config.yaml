@@ -30,7 +30,8 @@ compiler:
     optimizer:
       enabled: true
       runs: 200
-    remappings: null
+    remappings:
+      - "@openzeppelin=OpenZeppelin/openzeppelin-contracts@3.3.0"
   vyper:
     version: null
 
@@ -57,5 +58,6 @@ hypothesis:
     shrink: true
 
 autofetch_sources: false
-dependencies: null
+dependencies:
+  - OpenZeppelin/openzeppelin-contracts@3.3.0
 dev_deployment_artifacts: false

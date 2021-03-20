@@ -285,3 +285,25 @@ def onERC721Received(
     token_id: uint256 = convert(_data, uint256)
     self._receive_child(_from, token_id, msg.sender, _childTokenId)
     return TOKEN_RECEIVED
+
+
+@external
+def getChild(
+    _from: address, _tokenId: uint256, _childContract: address, _childTokenId: uint256
+):
+    """
+    @notice Get a child token from an ERC721 contract.
+    @param _from The address that owns the child token.
+    @param _tokenId The token that becomes the parent owner
+    @param _childContract The ERC721 contract of the child token
+    @param _childTokenId The tokenId of the child token
+    """
+    assert (
+        ERC721(_childContract).getApproved(_childTokenId) == self
+    )  # dev: Not approved to get token
+    assert _from == msg.sender or ERC721(_childContract).isApprovedForAll(
+        _from, msg.sender
+    )  # dev: Caller is neither _childTokenId owner nor operator
+
+    ERC721(_childContract).transferFrom(_from, self, _childTokenId)
+    self._receive_child(_from, _tokenId, _childContract, _childTokenId)

@@ -5,6 +5,7 @@
 @author Edward Amor
 @notice You can use this contract to manage owned NFT exhibits
 """
+from vyper.interfaces import ERC721
 
 
 TOKEN_RECEIVED: constant(Bytes[4]) = 0x150b7a02
@@ -14,6 +15,11 @@ interface ERC721TokenReceiver:
     def onERC721Received(
         _operator: address, _from: address, _tokenId: uint256, _data: Bytes[1024]
     ) -> Bytes[4]: nonpayable
+
+
+struct ChildTokenData:
+    parent_token_id: uint256
+    is_held: bool
 
 
 event Approval:
@@ -56,6 +62,9 @@ balanceOf: public(HashMap[address, uint256])
 ownerOf: public(HashMap[uint256, address])
 isApprovedForAll: public(HashMap[address, HashMap[address, bool]])
 getApproved: public(HashMap[uint256, address])
+
+# child token contract => child token id => child token data
+child_token_data: HashMap[address, HashMap[uint256, ChildTokenData]]
 
 
 @external
@@ -222,3 +231,57 @@ def safeTransferFrom(
         assert (
             return_value == TOKEN_RECEIVED
         )  # dev: Invalid ERC721TokenReceiver response
+
+
+@internal
+def _receive_child(
+    _from: address,
+    _token_id: uint256,
+    _child_contract: address,
+    _child_token_id: uint256,
+):
+    """
+    @dev Internal functionality for receiving a token
+    @param _from The address which previously owned the token
+    @param _token_id The receiving token identifier
+    @param _child_contract The contract address of the child token being received
+    @param _child_token_id The token identifier of the token being received
+    """
+    assert self.ownerOf[_token_id] != ZERO_ADDRESS  # dev: Recipient token non-existent
+    assert not self.child_token_data[_child_contract][
+        _child_token_id
+    ].is_held  # dev: Child token already possessed
+
+    self.child_token_data[_child_contract][_child_token_id].is_held = True
+    self.child_token_data[_child_contract][_child_token_id].parent_token_id = _token_id
+
+    log ReceivedChild(_from, _token_id, _child_contract, _child_token_id)
+
+
+@external
+def onERC721Received(
+    _operator: address, _from: address, _childTokenId: uint256, _data: Bytes[32]
+) -> bytes32:
+    """
+    @notice Handle the receipt of an NFT
+    @dev The ERC721 smart contract calls this function after a `transfer`.
+        This function MAY throw to revert and reject the transfer. Return
+        of other than the magic value MUST result in the transaction being
+        reverted. Note: the contract address is always the message sender.
+    @param _operator The address which called the `safeTransferFrom` function
+        of the calling contract.
+    @param _from The address which previously owned the token
+    @param _childTokenId The NFT identifier which is being transferred
+    @param _data Up to the first 32 bytes contains an integer which is the receiving
+        parent tokenId.
+    @return `bytes4(keccak256("onERC721Received(address,address,uint256,bytes)"))`
+        unless throwing
+    """
+    assert len(_data) > 0  # dev: _data must contain the receiving tokenId
+    assert (
+        ERC721(msg.sender).ownerOf(_childTokenId) == self
+    )  # dev: Token was not transferred to contract
+
+    token_id: uint256 = convert(_data, uint256)
+    self._receive_child(_from, token_id, msg.sender, _childTokenId)
+    return TOKEN_RECEIVED

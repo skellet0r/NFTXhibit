@@ -335,7 +335,7 @@ def getChild(
 
 @view
 @internal
-def _ownerOfChild(
+def _owner_of_child(
     _childContract: address, _childTokenId: uint256
 ) -> (address, uint256):
     assert self.child_token_data[_childContract][
@@ -364,7 +364,7 @@ def ownerOfChild(_childContract: address, _childTokenId: uint256) -> (bytes32, u
     parent_token_address: address = empty(address)
     parent_token_id: uint256 = empty(uint256)
 
-    parent_token_address, parent_token_id = self._ownerOfChild(
+    parent_token_address, parent_token_id = self._owner_of_child(
         _childContract, _childTokenId
     )
     parent_token_address_num: uint256 = convert(parent_token_address, uint256)

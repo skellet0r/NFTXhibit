@@ -1,26 +1,23 @@
-# Python Dev Dapp Template
+# NFT Xhibit
 
-A template for building dapps with `eth-brownie` and `reactjs`.
+A virtual space for exploring NFT collections.
 
-## Getting Started
+## Description
 
-There are a couple of things you'll need to edit once you've created your repository using this template:
+This project implements a thin wrapper around existing protocols using ERC-998, allowing for essentially an NFT crypto-collectibles wallet.
+This project was intended to give users of various NFT platforms/marketplaces a virtual world to store and view their collectibles in an
+interesting virtual world.
 
-- [ ] Change project name in `package.json`
-- [ ] Update README.md
+This project uses the Vyper smart contract language to provide a thin wrapper around existing contracts and manage NFTs on-chain.
+The UI utilizes the A-Frame 3D library for creating virtual experiences using standard HTML/JS.
+Development required a heavy dosage of eth-brownie.
 
-To initialize your environment you'll need to have the following dependencies pre-installed:
-
-- [ ] `pip` - package manager
-- [ ] `npm` - package manager
-
-> Note: This project uses python for smart contract development, but reactjs and nodejs for front-end development.
-
-Follow the steps below to complete the environment initialization:
+## Smart Contract Development Quickstart
 
 ```bash
+$ git clone https://github.com/skellet0r/NFTXhibit.git
+$ cd NFTXhibit
 $ python -m venv venv
-$ ./venv/bin/activate
+$ source ./venv/bin/activate
 $ pip install -r requirements.txt
-$ npm install
 ```

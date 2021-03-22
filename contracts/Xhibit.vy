@@ -7,6 +7,9 @@
 """
 
 
+TOKEN_RECEIVED: constant(Bytes[4]) = 0x150b7a02
+
+
 interface ERC721TokenReceiver:
     def onERC721Received(
         _operator: address, _from: address, _tokenId: uint256, _data: Bytes[1024]
@@ -220,6 +223,6 @@ def safeTransferFrom(
         return_value: Bytes[8] = ERC721TokenReceiver(_to).onERC721Received(
             msg.sender, _from, _tokenId, _data
         )  # dev: bad response
-        assert return_value == method_id(
-            "onERC721Received(address,address,uint256,bytes)"
+        assert (
+            return_value == TOKEN_RECEIVED
         )  # dev: Invalid ERC721TokenReceiver response

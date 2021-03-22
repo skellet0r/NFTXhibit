@@ -40,3 +40,14 @@ def test_unsuccessful_transfer_receiving_token_not_transferred(
         assert (
             tx.subcalls[0]["revert_msg"] == "dev: Token was not transferred to contract"
         )
+
+
+def test_unsuccessful_transfer_receiving_token_already_possessed(
+    alice, nft_no_auth, xhibit
+):
+    nft_no_auth.safeTransferFrom(alice, xhibit, 0, 0, {"from": alice})
+
+    with brownie.reverts("dev: bad response"):
+        tx = nft_no_auth.safeTransferFrom(xhibit, xhibit, 0, 0, {"from": alice})
+
+        assert tx.subcalls[0]["revert_msg"] == "dev: Child token already possessed"

@@ -81,5 +81,5 @@ def test_safeTransferFrom_reverts_when_transferring_to_non_receiver_contract(
     instance = alice.deploy(ERC721TokenReceiver, False)
     xhibit.mint(alice, {"from": alice})
 
-    with brownie.reverts("dev: Can not transfer to non-ERC721Receiver"):
+    with brownie.reverts("dev: Invalid ERC721TokenReceiver response"):
         xhibit.safeTransferFrom(alice, instance.address, 0, b"", {"from": alice})

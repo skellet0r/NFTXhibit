@@ -352,10 +352,8 @@ def ownerOfChild(_childContract: address, _childTokenId: uint256) -> (bytes32, u
     parent_token_address, parent_token_id = self._owner_of_child(
         _childContract, _childTokenId
     )
-    parent_token_address_num: uint256 = convert(parent_token_address, uint256)
-    magic_value_num: uint256 = convert(ERC998_MAGIC_VALUE, uint256)
     parent_addr_and_magic_val: uint256 = bitwise_or(
-        magic_value_num, parent_token_address_num
+        convert(ERC998_MAGIC_VALUE, uint256), convert(parent_token_address, uint256)
     )
 
     return (convert(parent_addr_and_magic_val, bytes32), parent_token_id)

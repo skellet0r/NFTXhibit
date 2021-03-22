@@ -305,8 +305,10 @@ def getChild(
     @param _childContract The ERC721 contract of the child token
     @param _childTokenId The tokenId of the child token
     """
-    assert (
-        ERC721(_childContract).getApproved(_childTokenId) == self
+    assert ERC721(_childContract).getApproved(_childTokenId) == self or ERC721(
+        _childContract
+    ).isApprovedForAll(
+        _from, self
     )  # dev: Not approved to get token
     assert _from == msg.sender or ERC721(_childContract).isApprovedForAll(
         _from, msg.sender

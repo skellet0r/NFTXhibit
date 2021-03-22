@@ -1,6 +1,8 @@
 # @version 0.2.11
 """
-@title Mock ERC721 Receiver contract
+@title Mock ERC721 Token Receiver
+@dev On deployment specify if `onERC721Received` returns a
+    successful response
 """
 
 

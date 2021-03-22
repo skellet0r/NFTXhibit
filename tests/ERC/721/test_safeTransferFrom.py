@@ -55,8 +55,10 @@ def test_safeTransferFrom_is_payable(alice, bob, xhibit):
     assert xhibit.balance() == 10 ** 18
 
 
-def test_safeTransferFrom_transfers_ownership_to_contract(alice, xhibit, TokenReceiver):
-    instance = alice.deploy(TokenReceiver, True)
+def test_safeTransferFrom_transfers_ownership_to_contract(
+    alice, xhibit, ERC721TokenReceiver
+):
+    instance = alice.deploy(ERC721TokenReceiver, True)
     xhibit.mint(alice, {"from": alice})
     tx = xhibit.safeTransferFrom(alice, instance.address, 0, b"", {"from": alice})
 
@@ -64,9 +66,9 @@ def test_safeTransferFrom_transfers_ownership_to_contract(alice, xhibit, TokenRe
 
 
 def test_safeTransferFrom_transfers_ownership_to_contract_no_data(
-    alice, xhibit, TokenReceiver
+    alice, xhibit, ERC721TokenReceiver
 ):
-    instance = alice.deploy(TokenReceiver, True)
+    instance = alice.deploy(ERC721TokenReceiver, True)
     xhibit.mint(alice, {"from": alice})
     tx = xhibit.safeTransferFrom(alice, instance.address, 0, {"from": alice})
 
@@ -74,9 +76,9 @@ def test_safeTransferFrom_transfers_ownership_to_contract_no_data(
 
 
 def test_safeTransferFrom_reverts_when_transferring_to_non_receiver_contract(
-    alice, xhibit, TokenReceiver
+    alice, xhibit, ERC721TokenReceiver
 ):
-    instance = alice.deploy(TokenReceiver, False)
+    instance = alice.deploy(ERC721TokenReceiver, False)
     xhibit.mint(alice, {"from": alice})
 
     with brownie.reverts("dev: Can not transfer to non-ERC721Receiver"):

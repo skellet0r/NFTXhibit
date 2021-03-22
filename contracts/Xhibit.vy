@@ -374,3 +374,58 @@ def ownerOfChild(_childContract: address, _childTokenId: uint256) -> (bytes32, u
     )
 
     return (convert(parent_addr_and_magic_val, bytes32), parent_token_id)
+
+
+@view
+@internal
+def _root_owner_of_child(_childContract: address, _childTokenId: uint256) -> address:
+    root_owner_address: address = empty(address)
+    parent_token_id: uint256 = empty(uint256)
+
+    if _childContract == ZERO_ADDRESS:
+        root_owner_address = self.ownerOf[_childTokenId]
+    else:
+        root_owner_address, parent_token_id = self._owner_of_child(
+            _childContract, _childTokenId
+        )
+
+    for i in range(MAX_UINT256):
+        if root_owner_address != self:
+            break
+        else:
+            root_owner_address = self.ownerOf[parent_token_id]
+
+    if root_owner_address.is_contract:
+        fn_sig: Bytes[4] = method_id("rootOwnerOfChild(address,uint256)")
+        fn_data: Bytes[64] = concat(
+            convert(self, bytes32), convert(_childTokenId, bytes32)
+        )
+        result: Bytes[32] = raw_call(
+            root_owner_address,
+            concat(fn_sig, fn_data),
+            max_outsize=32,
+            is_static_call=True,
+        )
+
+        if len(result) > 0:
+            root_owner_address = extract32(result, 12, output_type=address)
+
+    return root_owner_address
+
+
+@view
+@external
+def rootOwnerOfChild(_childContract: address, _childTokenId: uint256) -> bytes32:
+    """
+    @notice Get the root owner of a child token.
+    @param _childContract The contract address of the child token.
+    @param _childTokenId The tokenId of the child.
+    @return The root owner at the top of tree of tokens and ERC998 magic value.
+    """
+    root_owner_address: address = self._root_owner_of_child(
+        _childContract, _childTokenId
+    )
+    return_value: uint256 = bitwise_or(
+        convert(ERC998_MAGIC_VALUE, uint256), convert(root_owner_address, uint256)
+    )
+    return convert(return_value, bytes32)

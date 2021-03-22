@@ -28,6 +28,12 @@ def zero_address() -> EthAddress:
 
 
 @pytest.fixture(scope="module")
+def nft(alice: Account, ERC721: ContractContainer) -> Contract:
+    """Instance of the Xhibit contract."""
+    return alice.deploy(ERC721)
+
+
+@pytest.fixture(scope="module")
 def xhibit(alice: Account, Xhibit: ContractContainer) -> Contract:
     """Instance of the Xhibit contract."""
     return alice.deploy(Xhibit)

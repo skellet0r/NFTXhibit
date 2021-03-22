@@ -1,7 +1,7 @@
 import brownie
 
 
-def test_successful_transfer_to_parent_token(alice, nft, xhibit, web3):
+def test_successful_transfer_to_parent_token_emits_event(alice, nft, xhibit):
     tx = nft.safeTransferFrom(alice, xhibit, 0, 0, {"from": alice})
 
     assert "ReceivedChild" in tx.events
@@ -11,13 +11,32 @@ def test_successful_transfer_to_parent_token(alice, nft, xhibit, web3):
     assert tx.events["ReceivedChild"]["_childTokenId"] == 0
 
 
-def test_unsuccessful_transfer_parent_token_not_given(alice, nft, xhibit, web3):
+def test_unsuccessful_transfer_parent_token_not_given(alice, nft, xhibit):
 
-    with brownie.reverts("dev: _data must contain the receiving tokenId"):
-        nft.safeTransferFrom(alice, xhibit, 0, b"", {"from": alice})
+    with brownie.reverts("dev: bad response"):
+        tx = nft.safeTransferFrom(alice, xhibit, 0, b"", {"from": alice})
+
+        assert (
+            tx.subcalls[0]["revert_msg"]
+            == "dev: _data must contain the receiving tokenId"
+        )
 
 
-def test_unsuccessful_transfer_parent_token_non_existent(alice, nft, xhibit, web3):
+def test_unsuccessful_transfer_parent_token_non_existent(alice, nft, xhibit):
 
-    with brownie.reverts("dev: Recipient token non-existent"):
-        nft.safeTransferFrom(alice, xhibit, 0, 1, {"from": alice})
+    with brownie.reverts("dev: bad response"):
+        tx = nft.safeTransferFrom(alice, xhibit, 0, 1, {"from": alice})
+
+        assert tx.subcalls[0]["revert_msg"] == "dev: Recipient token non-existent"
+
+
+def test_unsuccessful_transfer_receiving_token_not_transferred(
+    alice, nft_transfer_last, xhibit
+):
+
+    with brownie.reverts("dev: bad response"):
+        tx = nft_transfer_last.safeTransferFrom(alice, xhibit, 0, 0, {"from": alice})
+
+        assert (
+            tx.subcalls[0]["revert_msg"] == "dev: Token was not transferred to contract"
+        )

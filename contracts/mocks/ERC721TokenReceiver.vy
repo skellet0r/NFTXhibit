@@ -17,10 +17,8 @@ def __init__(is_receiver: bool):
 @external
 def onERC721Received(
     _operator: address, _from: address, _tokenId: uint256, _data: Bytes[1024]
-) -> bytes32:
-    value: bytes32 = empty(bytes32)
+) -> Bytes[4]:
+    value: Bytes[4] = empty(Bytes[4])
     if self.is_receiver:
-        value = method_id(
-            "onERC721Received(address,address,uint256,bytes)", output_type=bytes32
-        )
+        value = method_id("onERC721Received(address,address,uint256,bytes)")
     return value

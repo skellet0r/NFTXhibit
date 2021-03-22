@@ -1,8 +1,7 @@
 # @version 0.2.11
 """
 @title Mock ERC721 contract
-@dev The safeTransferFrom fn first calls the receiving contract
-    then updates state transferring the token
+@dev No authentication checks are made for transfers/approve
 """
 
 
@@ -59,9 +58,6 @@ def setApprovalForAll(_operator: address, _approved: bool):
 @external
 def approve(_approved: address, _tokenId: uint256):
     token_owner: address = self.ownerOf[_tokenId]
-    assert (
-        msg.sender == token_owner or self.isApprovedForAll[token_owner][msg.sender]
-    )  # dev: Caller is neither owner nor operator
 
     self.getApproved[_tokenId] = _approved
 
@@ -72,11 +68,6 @@ def approve(_approved: address, _tokenId: uint256):
 @external
 def transferFrom(_from: address, _to: address, _tokenId: uint256):
     token_owner: address = self.ownerOf[_tokenId]
-    assert (
-        msg.sender == token_owner
-        or self.isApprovedForAll[token_owner][msg.sender]
-        or self.getApproved[_tokenId] == msg.sender
-    )  # dev: Caller is neither owner nor operator nor approved
 
     self._transferFrom(_from, _to, _tokenId)
 
@@ -87,11 +78,8 @@ def safeTransferFrom(
     _from: address, _to: address, _tokenId: uint256, _data: Bytes[1024] = b""
 ):
     token_owner: address = self.ownerOf[_tokenId]
-    assert (
-        msg.sender == token_owner
-        or self.isApprovedForAll[token_owner][msg.sender]
-        or self.getApproved[_tokenId] == msg.sender
-    )  # dev: Caller is neither owner nor operator nor approved
+
+    self._transferFrom(_from, _to, _tokenId)
 
     if _to.is_contract:
         return_value: bytes32 = TokenReceiver(_to).onERC721Received(
@@ -100,8 +88,6 @@ def safeTransferFrom(
         assert return_value == method_id(
             "onERC721Received(address,address,uint256,bytes)", output_type=bytes32
         )  # dev: Can not transfer to non-ERC721Receiver
-
-    self._transferFrom(_from, _to, _tokenId)
 
 
 @external

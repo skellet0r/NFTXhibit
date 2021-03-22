@@ -94,7 +94,7 @@ def safeTransferFrom(
     if _to.is_contract:
         return_value: bytes32 = TokenReceiver(_to).onERC721Received(
             msg.sender, _from, _tokenId, _data
-        )
+        )  # dev: bad response
         assert return_value == method_id(
             "onERC721Received(address,address,uint256,bytes)", output_type=bytes32
         )  # dev: Can not transfer to non-ERC721Receiver

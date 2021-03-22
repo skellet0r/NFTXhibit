@@ -111,25 +111,6 @@ def _transferFrom(_from: address, _to: address, _tokenId: uint256):
     log Transfer(_from, _to, _tokenId)
 
 
-<<<<<<< HEAD
-=======
-@view
-@external
-def supportsInterface(interfaceID: bytes32) -> bool:
-    """
-    @notice Query if an interface is implemented
-    @param interfaceID The interface identifier, as specified in ERC-165
-    @return `True` if the contract implements `interfaceID` and
-        `interfaceID` is not 0xffffffff, `False` otherwise
-    """
-    return interfaceID in [
-        0x0000000000000000000000000000000000000000000000000000000001ffc9a7,  # ERC-165
-        0x000000000000000000000000000000000000000000000000000000007f5828d0,  # ERC-173
-        0x0000000000000000000000000000000000000000000000000000000080ac58cd,  # ERC-721
-    ]
-
-
->>>>>>> 36a3fe5 (fix: interfaceID capitalization)
 @external
 def transferOwnership(_newOwner: address):
     """

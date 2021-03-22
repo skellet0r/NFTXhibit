@@ -8,7 +8,7 @@
 interface TokenReceiver:
     def onERC721Received(
         _operator: address, _from: address, _tokenId: uint256, _data: Bytes[1024]
-    ) -> bytes32: nonpayable
+    ) -> Bytes[4]: nonpayable
 
 
 event Approval:
@@ -82,11 +82,11 @@ def safeTransferFrom(
     self._transferFrom(_from, _to, _tokenId)
 
     if _to.is_contract:
-        return_value: bytes32 = TokenReceiver(_to).onERC721Received(
+        return_value: Bytes[8] = TokenReceiver(_to).onERC721Received(
             msg.sender, _from, _tokenId, _data
         )  # dev: bad response
         assert return_value == method_id(
-            "onERC721Received(address,address,uint256,bytes)", output_type=bytes32
+            "onERC721Received(address,address,uint256,bytes)"
         )  # dev: Can not transfer to non-ERC721Receiver
 
 

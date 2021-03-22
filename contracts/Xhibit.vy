@@ -298,6 +298,8 @@ def getChild(
 ):
     """
     @notice Get a child token from an ERC721 contract.
+    @dev Caller must be the owner of the token being sent or
+        an approved operator
     @param _from The address that owns the child token.
     @param _tokenId The token that becomes the parent owner
     @param _childContract The ERC721 contract of the child token

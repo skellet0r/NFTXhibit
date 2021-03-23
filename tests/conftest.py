@@ -34,15 +34,15 @@ def nft(alice: Account, ERC721: ContractContainer) -> Contract:
 
 
 @pytest.fixture(scope="module")
-def xhibit(alice: Account, Xhibit: ContractContainer) -> Contract:
-    """Instance of the Xhibit contract."""
-    return alice.deploy(Xhibit)
+def callproxy(alice: Account, CallProxy: ContractContainer) -> Contract:
+    """Instance of the CallProxy contract."""
+    return alice.deploy(CallProxy)
 
 
 @pytest.fixture(scope="module")
-def nft(alice: Account, ERC721: ContractContainer) -> Contract:
-    """Instance of a mock ERC721 contract."""
-    return alice.deploy(ERC721)
+def xhibit(alice: Account, callproxy: Contract, Xhibit: ContractContainer) -> Contract:
+    """Instance of the Xhibit contract."""
+    return alice.deploy(Xhibit, callproxy)
 
 
 @pytest.fixture(autouse=True)

@@ -22,7 +22,6 @@ interface CallProxy:
 
 
 struct ChildTokenData:
-    parent_token_address: address
     parent_token_id: uint256
     is_held: bool
 
@@ -340,7 +339,6 @@ def _receive_child(
     ].is_held  # dev: Child token already possessed
 
     self.child_token_data[_child_contract][_child_token_id].is_held = True
-    self.child_token_data[_child_contract][_child_token_id].parent_token_address = self
     self.child_token_data[_child_contract][_child_token_id].parent_token_id = _token_id
 
     log ReceivedChild(_from, _token_id, _child_contract, _child_token_id)

@@ -68,6 +68,8 @@ event TransferChild:
 
 
 totalSupply: public(uint256)
+owner_to_tokens: HashMap[address, uint256[MAX_UINT256]]
+owner_to_token_to_index: HashMap[address, HashMap[uint256, uint256]]
 
 owner: public(address)
 
@@ -627,3 +629,20 @@ def tokenByIndex(_index: uint256) -> uint256:
     assert _index < self.totalSupply  # dev: Invalid index
 
     return _index
+
+
+@view
+@external
+def tokenOfOwnerByIndex(_owner: address, _index: uint256) -> uint256:
+    """
+    @notice Enumerate NFTs assigned to an owner
+    @dev Throws if `_index` >= `balanceOf(_owner)` or if
+        `_owner` is the zero address, representing invalid NFTs.
+    @param _owner An address where we are interested in NFTs owned by them
+    @param _index A counter less than `balanceOf(_owner)`
+    @return The token identifier for the `_index`th NFT assigned to `_owner`,
+        (sort order not specified)
+    """
+    assert _index < self.balanceOf[_owner]  # dev: Invalid index
+
+    return self.owner_to_tokens[_owner][_index]

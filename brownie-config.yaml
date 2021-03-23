@@ -42,8 +42,10 @@ console:
   completions: true
 
 reports:
-  exclude_paths: null
-  exclude_contracts: null
+  exclude_paths:
+    - contracts/mocks/*
+  exclude_contracts:
+    - CallProxy
 
 hypothesis:
   deadline: null

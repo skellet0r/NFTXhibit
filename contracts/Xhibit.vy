@@ -19,6 +19,9 @@ interface ERC721TokenReceiver:
         _operator: address, _from: address, _tokenId: uint256, _data: Bytes[1024]
     ) -> Bytes[4]: nonpayable
 
+interface CallProxy:
+    def tryStaticCall(_target: address, _calldata: Bytes[1024]) -> Bytes[1024]: view
+
 
 struct ChildTokenData:
     parent_token_address: address
@@ -386,11 +389,8 @@ def _root_owner_of_child(_childContract: address, _childTokenId: uint256) -> add
         fn_data: Bytes[64] = concat(
             convert(self, bytes32), convert(_childTokenId, bytes32)
         )
-        result: Bytes[32] = raw_call(
-            root_owner_address,
-            concat(fn_sig, fn_data),
-            max_outsize=32,
-            is_static_call=True,
+        result: Bytes[1024] = CallProxy(self.call_proxy).tryStaticCall(
+            root_owner_address, concat(fn_sig, fn_data)
         )
 
         if len(result) > 0:

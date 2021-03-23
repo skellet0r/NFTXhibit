@@ -10,7 +10,7 @@ def test_ownerOfChild_returns_correct_values(alice, nft, xhibit):
 
     ownerOfChild = xhibit.ownerOfChild(nft, 0)
 
-    assert ownerOfChild[0] == ERC998_MAGIC_VALUE[:-40] + xhibit.address[2:]
+    assert ownerOfChild[0] == ERC998_MAGIC_VALUE[:-40] + alice.address[2:]
     assert ownerOfChild[1] == 0
 
 

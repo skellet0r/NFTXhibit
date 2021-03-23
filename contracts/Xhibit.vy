@@ -97,6 +97,85 @@ def _mint(_to: address):
     log Transfer(ZERO_ADDRESS, _to, token_id)
 
 
+@view
+@internal
+def _owner_of_child(
+    _childContract: address, _childTokenId: uint256
+) -> (address, uint256):
+    """
+    @dev Internal function for retrieving the parent token of a
+        child token. This will revert if the token is not possessed
+        by this contract.
+    @param _childContract The contract address of the child token
+    @param _childTokenId The child token ID
+    @return The parent address of the child token
+    @return The parent token ID of the child token
+    """
+    assert self.child_token_data[_childContract][
+        _childTokenId
+    ].is_held  # dev: Token is not held by self
+
+    parent_token_id: uint256 = self.child_token_data[_childContract][
+        _childTokenId
+    ].parent_token_id
+    return (self.ownerOf[parent_token_id], parent_token_id)
+
+
+@view
+@internal
+def _root_owner_of_child(_childContract: address, _childTokenId: uint256) -> address:
+    """
+    @dev Internal function for retrieving the root owner of a child token. This is
+        the account at the top of the tree of composables. There are a couple of cases
+        a child token can be owned by (1) a parent token in this contract (and that
+        parent token can also be owned by a parent token in this contract), (2) an
+        external Top Down composables contract, (3) a contract which doesn't adhere
+        to the Top Down composables interface, (4) an EOA.
+        Passing ZERO_ADDRESS for `_childContract` will search for the root owner of
+        a parent token in this contract.
+    @param _childContract The contract address of the child token
+    @param The child token ID
+    @return The root owner address
+    """
+    root_owner_address: address = empty(address)
+    parent_token_id: uint256 = empty(uint256)
+
+    if _childContract == ZERO_ADDRESS:
+        root_owner_address = self.ownerOf[_childTokenId]
+    else:
+        root_owner_address, parent_token_id = self._owner_of_child(
+            _childContract, _childTokenId
+        )
+
+    for i in range(MAX_UINT256):
+        if root_owner_address != self:
+            break
+        root_owner_address, parent_token_id = self._owner_of_child(
+            _childContract, _childTokenId
+        )
+
+    if root_owner_address.is_contract:
+        fn_sig: Bytes[4] = method_id("rootOwnerOfChild(address,uint256)")
+        fn_data: Bytes[64] = concat(
+            convert(self, bytes32), convert(parent_token_id, bytes32)
+        )
+        result: Bytes[32] = CallProxy(self.call_proxy).tryStaticCall(
+            root_owner_address, concat(fn_sig, fn_data)
+        )
+
+        if len(result) == 32:
+            # TODO: Figure out why the following do not work
+            # slice(result, 0, 4) == ERC998_MAGIC_VALUE
+            # extract32(result, 12, output_type=address)
+            magic_val: uint256 = convert(slice(result, 0, 4), uint256)
+            addr_val: uint256 = convert(slice(result, 12, 20), uint256)
+
+            if magic_val == convert(ERC998_MAGIC_VALUE, uint256):
+                root_owner_address = convert(addr_val, address)
+
+    return root_owner_address
+
+
 @internal
 def _transferFrom(_from: address, _to: address, _tokenId: uint256):
     """
@@ -323,21 +402,6 @@ def getChild(
 
 
 @view
-@internal
-def _owner_of_child(
-    _childContract: address, _childTokenId: uint256
-) -> (address, uint256):
-    assert self.child_token_data[_childContract][
-        _childTokenId
-    ].is_held  # dev: Token is not held by self
-
-    parent_token_id: uint256 = self.child_token_data[_childContract][
-        _childTokenId
-    ].parent_token_id
-    return (self.ownerOf[parent_token_id], parent_token_id)
-
-
-@view
 @external
 def ownerOfChild(_childContract: address, _childTokenId: uint256) -> (bytes32, uint256):
     """
@@ -359,48 +423,6 @@ def ownerOfChild(_childContract: address, _childTokenId: uint256) -> (bytes32, u
     )
 
     return (convert(parent_addr_and_magic_val, bytes32), parent_token_id)
-
-
-@view
-@internal
-def _root_owner_of_child(_childContract: address, _childTokenId: uint256) -> address:
-    root_owner_address: address = empty(address)
-    parent_token_id: uint256 = empty(uint256)
-
-    if _childContract == ZERO_ADDRESS:
-        root_owner_address = self.ownerOf[_childTokenId]
-    else:
-        root_owner_address, parent_token_id = self._owner_of_child(
-            _childContract, _childTokenId
-        )
-
-    for i in range(MAX_UINT256):
-        if root_owner_address != self:
-            break
-        root_owner_address, parent_token_id = self._owner_of_child(
-            _childContract, _childTokenId
-        )
-
-    if root_owner_address.is_contract:
-        fn_sig: Bytes[4] = method_id("rootOwnerOfChild(address,uint256)")
-        fn_data: Bytes[64] = concat(
-            convert(self, bytes32), convert(parent_token_id, bytes32)
-        )
-        result: Bytes[32] = CallProxy(self.call_proxy).tryStaticCall(
-            root_owner_address, concat(fn_sig, fn_data)
-        )
-
-        if len(result) == 32:
-            # TODO: Figure out why the following do not work
-            # slice(result, 0, 4) == ERC998_MAGIC_VALUE
-            # extract32(result, 12, output_type=address)
-            magic_val: uint256 = convert(slice(result, 0, 4), uint256)
-            addr_val: uint256 = convert(slice(result, 12, 20), uint256)
-
-            if magic_val == convert(ERC998_MAGIC_VALUE, uint256):
-                root_owner_address = convert(addr_val, address)
-
-    return root_owner_address
 
 
 @view

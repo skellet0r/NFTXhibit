@@ -9,9 +9,7 @@ from vyper.interfaces import ERC721
 
 
 TOKEN_RECEIVED: constant(Bytes[4]) = 0x150b7a02
-ERC998_MAGIC_VALUE: constant(
-    bytes32
-) = 0xcd740db500000000000000000000000000000000000000000000000000000000
+ERC998_MAGIC_VALUE: constant(Bytes[4]) = 0xcd740db5
 
 
 interface ERC721TokenReceiver:
@@ -352,11 +350,12 @@ def ownerOfChild(_childContract: address, _childTokenId: uint256) -> (bytes32, u
     parent_address: address = empty(address)
     parent_token_id: uint256 = empty(uint256)
 
+    magic_val: bytes32 = convert(ERC998_MAGIC_VALUE, bytes32)
     parent_address, parent_token_id = self._owner_of_child(
         _childContract, _childTokenId
     )
     parent_addr_and_magic_val: uint256 = bitwise_or(
-        convert(ERC998_MAGIC_VALUE, uint256), convert(parent_address, uint256)
+        convert(magic_val, uint256), convert(parent_address, uint256)
     )
 
     return (convert(parent_addr_and_magic_val, bytes32), parent_token_id)
@@ -368,12 +367,12 @@ def _root_owner_of_child(_childContract: address, _childTokenId: uint256) -> add
     root_owner_address: address = empty(address)
     parent_token_id: uint256 = empty(uint256)
 
-    if _childContract != ZERO_ADDRESS:
+    if _childContract == ZERO_ADDRESS:
+        root_owner_address = self.ownerOf[_childTokenId]
+    else:
         root_owner_address, parent_token_id = self._owner_of_child(
             _childContract, _childTokenId
         )
-    else:
-        root_owner_address = self.ownerOf[_childTokenId]
 
     for i in range(MAX_UINT256):
         if root_owner_address != self:
@@ -391,7 +390,7 @@ def _root_owner_of_child(_childContract: address, _childTokenId: uint256) -> add
             root_owner_address, concat(fn_sig, fn_data)
         )
 
-        if len(result) > 0 and slice(result, 0, 4) == 0xcd740db5:
+        if len(result) > 0 and slice(result, 0, 4) == ERC998_MAGIC_VALUE:
             root_owner_address = extract32(result, 12, output_type=address)
 
     return root_owner_address
@@ -406,10 +405,11 @@ def rootOwnerOfChild(_childContract: address, _childTokenId: uint256) -> bytes32
     @param _childTokenId The tokenId of the child.
     @return The root owner at the top of tree of tokens and ERC998 magic value.
     """
+    magic_val: bytes32 = convert(ERC998_MAGIC_VALUE, bytes32)
     root_owner_address: address = self._root_owner_of_child(
         _childContract, _childTokenId
     )
     return_value: uint256 = bitwise_or(
-        convert(ERC998_MAGIC_VALUE, uint256), convert(root_owner_address, uint256)
+        convert(magic_val, uint256), convert(root_owner_address, uint256)
     )
     return convert(return_value, bytes32)

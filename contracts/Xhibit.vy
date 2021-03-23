@@ -610,3 +610,20 @@ def transferChildToParent(
     )  # dev: bad response
 
     log TransferChild(_fromTokenId, _toContract, _childContract, _childTokenId)
+
+
+@view
+@external
+def tokenByIndex(_index: uint256) -> uint256:
+    """
+    @notice Enumerate valid NFTs
+    @dev Throws if `_index` >= `totalSupply()`. Since token identifiers
+        are generated incrementally from 0, this just returns the arg
+        given.
+    @param _index A value less than `totalSupply()`
+    @return The token identifier for the `_index`th NFT,
+        (sort order not specified)
+    """
+    assert _index < self.totalSupply  # dev: Invalid index
+
+    return _index

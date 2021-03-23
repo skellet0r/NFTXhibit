@@ -18,7 +18,7 @@ interface ERC721TokenReceiver:
     ) -> Bytes[4]: nonpayable
 
 interface CallProxy:
-    def tryStaticCall(_target: address, _calldata: Bytes[1024]) -> Bytes[1024]: view
+    def tryStaticCall(_target: address, _calldata: Bytes[96]) -> Bytes[32]: view
 
 
 struct ChildTokenData:
@@ -384,14 +384,21 @@ def _root_owner_of_child(_childContract: address, _childTokenId: uint256) -> add
     if root_owner_address.is_contract:
         fn_sig: Bytes[4] = method_id("rootOwnerOfChild(address,uint256)")
         fn_data: Bytes[64] = concat(
-            convert(self, bytes32), convert(_childTokenId, bytes32)
+            convert(self, bytes32), convert(parent_token_id, bytes32)
         )
-        result: Bytes[1024] = CallProxy(self.call_proxy).tryStaticCall(
+        result: Bytes[32] = CallProxy(self.call_proxy).tryStaticCall(
             root_owner_address, concat(fn_sig, fn_data)
         )
 
-        if len(result) > 0 and slice(result, 0, 4) == ERC998_MAGIC_VALUE:
-            root_owner_address = extract32(result, 12, output_type=address)
+        if len(result) == 32:
+            # TODO: Figure out why the following do not work
+            # slice(result, 0, 4) == ERC998_MAGIC_VALUE
+            # extract32(result, 12, output_type=address)
+            magic_val: uint256 = convert(slice(result, 0, 4), uint256)
+            addr_val: uint256 = convert(slice(result, 12, 20), uint256)
+
+            if magic_val == convert(ERC998_MAGIC_VALUE, uint256):
+                root_owner_address = convert(addr_val, address)
 
     return root_owner_address
 
@@ -412,4 +419,5 @@ def rootOwnerOfChild(_childContract: address, _childTokenId: uint256) -> bytes32
     return_value: uint256 = bitwise_or(
         convert(magic_val, uint256), convert(root_owner_address, uint256)
     )
+
     return convert(return_value, bytes32)

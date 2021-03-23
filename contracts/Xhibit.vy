@@ -247,14 +247,14 @@ def approve(_approved: address, _tokenId: uint256):
     @param _approved The new approved NFT controller
     @param _tokenId The NFT to approve
     """
-    token_owner: address = self._root_owner_of_child(ZERO_ADDRESS, _tokenId)
+    root_owner: address = self._root_owner_of_child(ZERO_ADDRESS, _tokenId)
     assert (
-        msg.sender == token_owner or self.isApprovedForAll[token_owner][msg.sender]
+        msg.sender == root_owner or self.isApprovedForAll[root_owner][msg.sender]
     )  # dev: Caller is neither owner nor operator
 
     self.getApproved[_tokenId] = _approved
 
-    log Approval(token_owner, _approved, _tokenId)
+    log Approval(root_owner, _approved, _tokenId)
 
 
 @payable
@@ -272,10 +272,10 @@ def transferFrom(_from: address, _to: address, _tokenId: uint256):
     @param _to The new owner
     @param _tokenId The NFT to transfer
     """
-    token_owner: address = self._root_owner_of_child(ZERO_ADDRESS, _tokenId)
+    root_owner: address = self._root_owner_of_child(ZERO_ADDRESS, _tokenId)
     assert (
-        msg.sender == token_owner
-        or self.isApprovedForAll[token_owner][msg.sender]
+        msg.sender == root_owner
+        or self.isApprovedForAll[root_owner][msg.sender]
         or self.getApproved[_tokenId] == msg.sender
     )  # dev: Caller is neither owner nor operator nor approved
 
@@ -301,10 +301,10 @@ def safeTransferFrom(
     @param _tokenId The NFT to transfer
     @param _data Additional data with no specified format, sent in call to `_to`
     """
-    token_owner: address = self._root_owner_of_child(ZERO_ADDRESS, _tokenId)
+    root_owner: address = self._root_owner_of_child(ZERO_ADDRESS, _tokenId)
     assert (
-        msg.sender == token_owner
-        or self.isApprovedForAll[token_owner][msg.sender]
+        msg.sender == root_owner
+        or self.isApprovedForAll[root_owner][msg.sender]
         or self.getApproved[_tokenId] == msg.sender
     )  # dev: Caller is neither owner nor operator nor approved
 

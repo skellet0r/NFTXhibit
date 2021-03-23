@@ -368,18 +368,19 @@ def _root_owner_of_child(_childContract: address, _childTokenId: uint256) -> add
     root_owner_address: address = empty(address)
     parent_token_id: uint256 = empty(uint256)
 
-    if _childContract == ZERO_ADDRESS:
-        root_owner_address = self.ownerOf[_childTokenId]
-    else:
+    if _childContract != ZERO_ADDRESS:
         root_owner_address, parent_token_id = self._owner_of_child(
             _childContract, _childTokenId
         )
+    else:
+        root_owner_address = self.ownerOf[_childTokenId]
 
     for i in range(MAX_UINT256):
         if root_owner_address != self:
             break
-        else:
-            root_owner_address = self.ownerOf[parent_token_id]
+        root_owner_address, parent_token_id = self._owner_of_child(
+            _childContract, _childTokenId
+        )
 
     if root_owner_address.is_contract:
         fn_sig: Bytes[4] = method_id("rootOwnerOfChild(address,uint256)")
@@ -390,7 +391,7 @@ def _root_owner_of_child(_childContract: address, _childTokenId: uint256) -> add
             root_owner_address, concat(fn_sig, fn_data)
         )
 
-        if len(result) > 0:
+        if len(result) > 0 and slice(result, 0, 4) == 0xcd740db5:
             root_owner_address = extract32(result, 12, output_type=address)
 
     return root_owner_address

@@ -421,3 +421,22 @@ def rootOwnerOfChild(_childContract: address, _childTokenId: uint256) -> bytes32
     )
 
     return convert(return_value, bytes32)
+
+
+@view
+@external
+def rootOwnerOf(_tokenId: uint256) -> bytes32:
+    """
+    @notice Get the root owner of tokenId.
+    @param _tokenId The token to query for a root owner address
+    @return The root owner at the top of tree of tokens and ERC998 magic value.
+    """
+    magic_val: bytes32 = convert(ERC998_MAGIC_VALUE, bytes32)
+    root_owner_address: address = self._root_owner_of_child(
+        ZERO_ADDRESS, _tokenId
+    )
+    return_value: uint256 = bitwise_or(
+        convert(magic_val, uint256), convert(root_owner_address, uint256)
+    )
+
+    return convert(return_value, bytes32)

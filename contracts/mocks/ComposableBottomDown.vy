@@ -1,0 +1,115 @@
+# @version 0.2.11
+"""
+@title Mock Composable Bottom Down contract
+@dev No authentication checks are made for transfers/approve. Only
+    implements a mock transferToParent function.
+"""
+
+
+interface TokenReceiver:
+    def onERC721Received(
+        _operator: address, _from: address, _tokenId: uint256, _data: Bytes[1024]
+    ) -> Bytes[4]: nonpayable
+
+
+event Approval:
+    _owner: indexed(address)
+    _approved: indexed(address)
+    _tokenId: indexed(uint256)
+
+event ApprovalForAll:
+    _owner: indexed(address)
+    _operator: indexed(address)
+    _approved: bool
+
+event Transfer:
+    _from: indexed(address)
+    _to: indexed(address)
+    _tokenId: indexed(uint256)
+
+
+token_id_tracker: uint256
+
+balanceOf: public(HashMap[address, uint256])
+ownerOf: public(HashMap[uint256, address])
+isApprovedForAll: public(HashMap[address, HashMap[address, bool]])
+getApproved: public(HashMap[uint256, address])
+
+
+@internal
+def _transferFrom(_from: address, _to: address, _tokenId: uint256):
+    assert _to != ZERO_ADDRESS  # dev: Transfers to ZERO_ADDRESS not permitted
+
+    self.getApproved[_tokenId] = ZERO_ADDRESS
+    self.balanceOf[_from] -= 1
+    self.balanceOf[_to] += 1
+    self.ownerOf[_tokenId] = _to
+
+    log Transfer(_from, _to, _tokenId)
+
+
+@external
+def setApprovalForAll(_operator: address, _approved: bool):
+    self.isApprovedForAll[msg.sender][_operator] = _approved
+
+    log ApprovalForAll(msg.sender, _operator, _approved)
+
+
+@payable
+@external
+def approve(_approved: address, _tokenId: uint256):
+    token_owner: address = self.ownerOf[_tokenId]
+
+    self.getApproved[_tokenId] = _approved
+
+    log Approval(token_owner, _approved, _tokenId)
+
+
+@payable
+@external
+def transferFrom(_from: address, _to: address, _tokenId: uint256):
+    token_owner: address = self.ownerOf[_tokenId]
+
+    self._transferFrom(_from, _to, _tokenId)
+
+
+@payable
+@external
+def safeTransferFrom(
+    _from: address, _to: address, _tokenId: uint256, _data: Bytes[1024] = b""
+):
+    token_owner: address = self.ownerOf[_tokenId]
+
+    self._transferFrom(_from, _to, _tokenId)
+
+    if _to.is_contract:
+        return_value: Bytes[8] = TokenReceiver(_to).onERC721Received(
+            msg.sender, _from, _tokenId, _data
+        )  # dev: bad response
+        assert return_value == method_id(
+            "onERC721Received(address,address,uint256,bytes)"
+        )  # dev: Can not transfer to non-ERC721Receiver
+
+
+@external
+def _mint_for_testing(_to: address):
+    assert _to != ZERO_ADDRESS  # dev: Minting to zero address disallowed
+
+    token_id: uint256 = self.token_id_tracker
+    self.balanceOf[_to] += 1
+    self.ownerOf[token_id] = _to
+    self.token_id_tracker += 1
+
+    log Transfer(ZERO_ADDRESS, _to, token_id)
+
+
+@external
+def transferToParent(
+    _from: address,
+    _toContract: address,
+    _toTokenId: uint256,
+    _tokenId: uint256,
+    _data: Bytes[1024],
+):
+    # does something we don't know what nor do we care
+    self.balanceOf[_toContract] = 1 + 1

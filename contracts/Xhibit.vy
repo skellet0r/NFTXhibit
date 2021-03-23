@@ -20,6 +20,15 @@ interface ERC721TokenReceiver:
 interface CallProxy:
     def tryStaticCall(_target: address, _calldata: Bytes[96]) -> Bytes[32]: view
 
+interface ERC998ERC721BottomUp:
+    def transferToParent(
+        _from: address,
+        _toContract: address,
+        _toTokenId: uint256,
+        _tokenId: uint256,
+        _data: Bytes[1024],
+    ): nonpayable
+
 
 struct ChildTokenData:
     parent_token_id: uint256
@@ -555,3 +564,49 @@ def safeTransferChild(
     )  # dev: bad response
 
     log TransferChild(_fromTokenId, _to, _childContract, _childTokenId)
+
+
+@external
+def transferChildToParent(
+    _fromTokenId: uint256,
+    _toContract: address,
+    _toTokenId: uint256,
+    _childContract: address,
+    _childTokenId: uint256,
+    _data: Bytes[1024],
+):
+    """
+    @notice Transfer bottom-up composable child token from top-down composable
+        to other ERC721 token.
+    @dev Reverts if caller is not root owner, operator, or approved.
+        Calls the child contract's `safeTranferFrom` function.
+    @param _fromTokenId The owning token to transfer from.
+    @param _toContract The ERC721 contract of the receiving token
+    @param _toTokenId The receiving token
+    @param _childContract The bottom-up composable contract of the child token.
+    @param _childTokenId The token that is being transferred.
+    @param _data Additional data with no specified format
+    """
+    parent_addr: address = empty(address)
+    parent_token_id: uint256 = empty(uint256)
+    parent_addr, parent_token_id = self._owner_of_child(_childContract, _childTokenId)
+
+    root_owner: address = self._root_owner_of_child(_childContract, _childTokenId)
+
+    assert (
+        msg.sender == root_owner
+        or self.isApprovedForAll[root_owner][msg.sender]
+        or self.getApproved[parent_token_id] == msg.sender
+    )  # dev: Caller is neither owner nor operator nor approved
+    assert _fromTokenId == parent_token_id  # dev: Incorrect parent token ID
+    assert _toContract != ZERO_ADDRESS  # dev: Transfers to ZERO_ADDRESS not permitted
+
+    if msg.sender == self.getApproved[parent_token_id]:
+        self.getApproved[parent_token_id] = ZERO_ADDRESS
+
+    self._remove_child(_childContract, _childTokenId)
+    ERC998ERC721BottomUp(_childContract).transferToParent(
+        self, _toContract, _toTokenId, _childTokenId, _data
+    )  # dev: bad response
+
+    log TransferChild(_fromTokenId, _toContract, _childContract, _childTokenId)

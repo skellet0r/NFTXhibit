@@ -120,6 +120,20 @@ def _owner_of_child(
     return (self.ownerOf[parent_token_id], parent_token_id)
 
 
+@internal
+def _remove_child(
+    _childContract: address,
+    _childTokenId: uint256,
+):
+    """
+    @dev Internal function for emptying child token data
+    """
+    self.child_token_data[_childContract][_childTokenId].parent_token_id = empty(
+        uint256
+    )
+    self.child_token_data[_childContract][_childTokenId].is_held = empty(bool)
+
+
 @view
 @internal
 def _root_owner_of_child(_childContract: address, _childTokenId: uint256) -> address:
@@ -460,3 +474,41 @@ def rootOwnerOf(_tokenId: uint256) -> bytes32:
     )
 
     return convert(return_value, bytes32)
+
+
+@external
+def transferChild(
+    _fromTokenId: uint256, _to: address, _childContract: address, _childTokenId: uint256
+):
+    """
+    @notice Transfer child token from top-down composable to address.
+    @dev Reverts if caller is not root owner, operator, or approved.
+        Calls the child contract's `tranferFrom` function.
+    @param _fromTokenId The owning token to transfer from.
+    @param _to The address that receives the child token
+    @param _childContract The ERC721 contract of the child token.
+    @param _childTokenId The tokenId of the token that is being transferred.
+    """
+    parent_addr: address = empty(address)
+    parent_token_id: uint256 = empty(uint256)
+    parent_addr, parent_token_id = self._owner_of_child(_childContract, _childTokenId)
+
+    root_owner: address = self._root_owner_of_child(_childContract, _childTokenId)
+
+    assert (
+        msg.sender == root_owner
+        or self.isApprovedForAll[root_owner][msg.sender]
+        or self.getApproved[parent_token_id] == msg.sender
+    )  # dev: Caller is neither owner nor operator nor approved
+    assert _fromTokenId == parent_token_id  # dev: Incorrect parent token ID
+    assert _to != ZERO_ADDRESS  # dev: Transfers to ZERO_ADDRESS not permitted
+
+    if msg.sender == self.getApproved[parent_token_id]:
+        self.getApproved[parent_token_id] = ZERO_ADDRESS
+
+    self._remove_child(_childContract, _childTokenId)
+    ERC721(_childContract).transferFrom(
+        self, _to, _childTokenId
+    )  # dev: bad response
+
+    log TransferChild(_fromTokenId, _to, _childContract, _childTokenId)

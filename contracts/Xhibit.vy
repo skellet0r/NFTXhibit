@@ -121,6 +121,31 @@ def _owner_of_child(
 
 
 @internal
+def _receive_child(
+    _from: address,
+    _token_id: uint256,
+    _child_contract: address,
+    _child_token_id: uint256,
+):
+    """
+    @dev Internal functionality for receiving a token
+    @param _from The address which previously owned the token
+    @param _token_id The receiving token identifier
+    @param _child_contract The contract address of the child token being received
+    @param _child_token_id The token identifier of the token being received
+    """
+    assert self.ownerOf[_token_id] != ZERO_ADDRESS  # dev: Recipient token non-existent
+    assert not self.child_token_data[_child_contract][
+        _child_token_id
+    ].is_held  # dev: Child token already possessed
+
+    self.child_token_data[_child_contract][_child_token_id].is_held = True
+    self.child_token_data[_child_contract][_child_token_id].parent_token_id = _token_id
+
+    log ReceivedChild(_from, _token_id, _child_contract, _child_token_id)
+
+
+@internal
 def _remove_child(
     _childContract: address,
     _childTokenId: uint256,
@@ -331,31 +356,6 @@ def safeTransferFrom(
         assert (
             return_value == TOKEN_RECEIVED
         )  # dev: Invalid ERC721TokenReceiver response
-
-
-@internal
-def _receive_child(
-    _from: address,
-    _token_id: uint256,
-    _child_contract: address,
-    _child_token_id: uint256,
-):
-    """
-    @dev Internal functionality for receiving a token
-    @param _from The address which previously owned the token
-    @param _token_id The receiving token identifier
-    @param _child_contract The contract address of the child token being received
-    @param _child_token_id The token identifier of the token being received
-    """
-    assert self.ownerOf[_token_id] != ZERO_ADDRESS  # dev: Recipient token non-existent
-    assert not self.child_token_data[_child_contract][
-        _child_token_id
-    ].is_held  # dev: Child token already possessed
-
-    self.child_token_data[_child_contract][_child_token_id].is_held = True
-    self.child_token_data[_child_contract][_child_token_id].parent_token_id = _token_id
-
-    log ReceivedChild(_from, _token_id, _child_contract, _child_token_id)
 
 
 @external

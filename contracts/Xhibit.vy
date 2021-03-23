@@ -333,13 +333,10 @@ def _owner_of_child(
         _childTokenId
     ].is_held  # dev: Token is not held by self
 
-    parent_token_address: address = self.child_token_data[_childContract][
-        _childTokenId
-    ].parent_token_address
     parent_token_id: uint256 = self.child_token_data[_childContract][
         _childTokenId
     ].parent_token_id
-    return (parent_token_address, parent_token_id)
+    return (self.ownerOf[parent_token_id], parent_token_id)
 
 
 @view
@@ -352,14 +349,14 @@ def ownerOfChild(_childContract: address, _childTokenId: uint256) -> (bytes32, u
     @return The parent address of the parent token and ERC998 magic value
     @return The parent tokenId of _tokenId
     """
-    parent_token_address: address = empty(address)
+    parent_address: address = empty(address)
     parent_token_id: uint256 = empty(uint256)
 
-    parent_token_address, parent_token_id = self._owner_of_child(
+    parent_address, parent_token_id = self._owner_of_child(
         _childContract, _childTokenId
     )
     parent_addr_and_magic_val: uint256 = bitwise_or(
-        convert(ERC998_MAGIC_VALUE, uint256), convert(parent_token_address, uint256)
+        convert(ERC998_MAGIC_VALUE, uint256), convert(parent_address, uint256)
     )
 
     return (convert(parent_addr_and_magic_val, bytes32), parent_token_id)

@@ -70,9 +70,12 @@ getApproved: public(HashMap[uint256, address])
 # child token contract => child token id => child token data
 child_token_data: HashMap[address, HashMap[uint256, ChildTokenData]]
 
+call_proxy: address
+
 
 @external
-def __init__():
+def __init__(_call_proxy: address):
+    self.call_proxy = _call_proxy
     self.owner = msg.sender
 
 

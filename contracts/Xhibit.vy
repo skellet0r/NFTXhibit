@@ -30,10 +30,6 @@ interface ERC998ERC721BottomUp:
     ): nonpayable
 
 
-struct ChildTokenData:
-    parent_token_id: uint256
-    is_held: bool
-
 struct TokenData:
     child_contracts: address[MAX_UINT256]
     child_contracts_size: uint256
@@ -41,6 +37,14 @@ struct TokenData:
 struct ChildContractData:
     child_tokens: uint256[MAX_UINT256]
     child_tokens_size: uint256
+    position: uint256
+    is_held: bool
+
+struct ChildTokenData:
+    parent_token_id: uint256
+    is_held: bool
+    position: uint256
+
 
 event Approval:
     _owner: indexed(address)
@@ -166,16 +170,27 @@ def _receive_child(
         _child_token_id
     ].is_held  # dev: Child token already possessed
 
-    self.child_token_data[_child_contract][_child_token_id].is_held = True
-    self.child_token_data[_child_contract][_child_token_id].parent_token_id = _token_id
+    # if the child contract isn't registered, register it in _token_id
+    if not self.child_contracts[_token_id][_child_contract].is_held:
+        # add child contract to _token_id child contracts array
+        length: uint256 = self.tokens[_token_id].child_contracts_size
+        self.tokens[_token_id].child_contracts[length] = _child_contract
+        self.tokens[_token_id].child_contracts_size += 1
 
-    length: uint256 = self.tokens[_token_id].child_contracts_size
-    self.tokens[_token_id].child_contracts[length] = _child_contract
-    self.tokens[_token_id].child_contracts_size += 1
+        self.child_contracts[_token_id][_child_contract].position = length
+        self.child_contracts[_token_id][_child_contract].is_held = True
 
-    length = self.child_contracts[_token_id][_child_contract].child_tokens_size
+    # register the token in the _token_id._child_contract data
+    # add child token to _token_id._child_contract child tokens array
+    length: uint256 = self.child_contracts[_token_id][_child_contract].child_tokens_size
     self.child_contracts[_token_id][_child_contract].child_tokens[length] = _child_token_id
     self.child_contracts[_token_id][_child_contract].child_tokens_size += 1
+
+    self.child_token_data[_child_contract][_child_token_id].position = length
+
+    # register the child token data
+    self.child_token_data[_child_contract][_child_token_id].is_held = True
+    self.child_token_data[_child_contract][_child_token_id].parent_token_id = _token_id
 
     log ReceivedChild(_from, _token_id, _child_contract, _child_token_id)
 

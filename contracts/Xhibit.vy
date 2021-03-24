@@ -182,6 +182,7 @@ def _receive_child(
 
 @internal
 def _remove_child(
+    _from_token_id: uint256,
     _childContract: address,
     _childTokenId: uint256,
 ):
@@ -564,7 +565,7 @@ def transferChild(
     if msg.sender == self.getApproved[parent_token_id]:
         self.getApproved[parent_token_id] = ZERO_ADDRESS
 
-    self._remove_child(_childContract, _childTokenId)
+    self._remove_child(parent_token_id, _childContract, _childTokenId)
     ERC721(_childContract).transferFrom(
         self, _to, _childTokenId
     )  # dev: bad response
@@ -607,7 +608,7 @@ def safeTransferChild(
     if msg.sender == self.getApproved[parent_token_id]:
         self.getApproved[parent_token_id] = ZERO_ADDRESS
 
-    self._remove_child(_childContract, _childTokenId)
+    self._remove_child(parent_token_id, _childContract, _childTokenId)
     ERC721(_childContract).safeTransferFrom(
         self, _to, _childTokenId, _data
     )  # dev: bad response
@@ -653,7 +654,7 @@ def transferChildToParent(
     if msg.sender == self.getApproved[parent_token_id]:
         self.getApproved[parent_token_id] = ZERO_ADDRESS
 
-    self._remove_child(_childContract, _childTokenId)
+    self._remove_child(parent_token_id, _childContract, _childTokenId)
     ERC998ERC721BottomUp(_childContract).transferToParent(
         self, _toContract, _toTokenId, _childTokenId, _data
     )  # dev: bad response

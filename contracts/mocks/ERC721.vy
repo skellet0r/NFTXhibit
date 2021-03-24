@@ -31,7 +31,7 @@ event Transfer:
     _tokenId: indexed(uint256)
 
 
-token_id_tracker: uint256
+totalSupply: public(uint256)
 
 balanceOf: public(HashMap[address, uint256])
 ownerOf: public(HashMap[uint256, address])
@@ -43,10 +43,10 @@ getApproved: public(HashMap[uint256, address])
 def _mint(_to: address):
     assert _to != ZERO_ADDRESS  # dev: Minting to zero address disallowed
 
-    token_id: uint256 = self.token_id_tracker
+    token_id: uint256 = self.totalSupply
     self.balanceOf[_to] += 1
     self.ownerOf[token_id] = _to
-    self.token_id_tracker += 1
+    self.totalSupply += 1
 
     log Transfer(ZERO_ADDRESS, _to, token_id)
 

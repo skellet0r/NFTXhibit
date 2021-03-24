@@ -197,17 +197,71 @@ def _receive_child(
 
 @internal
 def _remove_child(
-    _from_token_id: uint256,
-    _childContract: address,
-    _childTokenId: uint256,
+    _from_token_id: uint256, _childContract: address, _childTokenId: uint256,
 ):
     """
     @dev Internal function for emptying child token data
     """
+    # position in the child contract array of tokens
+    child_token_index: uint256 = self.child_token_data[_childContract][
+        _childTokenId
+    ].position
+
+    # empty child token data
     self.child_token_data[_childContract][_childTokenId].parent_token_id = empty(
         uint256
     )
     self.child_token_data[_childContract][_childTokenId].is_held = empty(bool)
+    self.child_token_data[_childContract][_childTokenId].position = empty(uint256)
+
+    # reduce the size of the child contract array of tokens
+    self.child_contracts[_from_token_id][_childContract].child_tokens_size -= 1
+
+    # index of the last child token in the array which we will zero out
+    last_child_token_index: uint256 = self.child_contracts[_from_token_id][
+        _childContract
+    ].child_tokens_size
+    # if the pos of the token we are removing isn't last
+    if child_token_index < last_child_token_index:
+        # overwrite the position
+        # this is the last token
+        last_child_token: uint256 = self.child_contracts[_from_token_id][
+            _childContract
+        ].child_tokens[last_child_token_index]
+        # we overwrite the child_token_index with the last token
+        self.child_contracts[_from_token_id][_childContract].child_tokens[
+            child_token_index
+        ] = last_child_token
+        # we set the last token's index in it's data struct
+        self.child_token_data[_childContract][
+            last_child_token
+        ].position = child_token_index
+    # lastly we zero out the last token position in the token array
+    self.child_contracts[_from_token_id][_childContract].child_tokens[
+        last_child_token_index
+    ] = empty(uint256)
+
+    # handle removing a contract if all the tokens are gone
+    if self.child_contracts[_from_token_id][_childContract].child_tokens_size == 0:
+        # position of the contract in the array of contracts
+        contract_index: uint256 = self.child_contracts[_from_token_id][
+            _childContract
+        ].position
+        # empty the data
+        self.child_contracts[_from_token_id][_childContract].is_held = empty(bool)
+        self.child_contracts[_from_token_id][_childContract].position = empty(uint256)
+
+        self.tokens[_from_token_id].child_contracts_size -= 1
+        last_contract_index: uint256 = self.tokens[_from_token_id].child_contracts_size
+        if contract_index < last_contract_index:
+            last_contract: address = self.tokens[_from_token_id].child_contracts[
+                last_contract_index
+            ]
+            self.tokens[_from_token_id].child_contracts[contract_index] = last_contract
+            self.child_contracts[_from_token_id][
+                last_contract
+            ].position = contract_index
+        self.tokens[_from_token_id].child_contracts[last_contract_index] = empty(address)
 
 
 @view
@@ -287,7 +341,7 @@ def _transferFrom(_from: address, _to: address, _tokenId: uint256):
     index: uint256 = self.owner_to_token_to_index[_from][_tokenId]
     last_index: uint256 = self.balanceOf[_from]
 
-    # if the positioin of _tokenId in _from's token array is not
+    # if the position of _tokenId in _from's token array is not
     # the last token, overwrite the position with the last token
     # in the array an change the last_token's position tracker
     if index < last_index:

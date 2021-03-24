@@ -34,6 +34,10 @@ struct ChildTokenData:
     parent_token_id: uint256
     is_held: bool
 
+struct TokenData:
+    child_contracts: address[MAX_UINT256]
+    child_contracts_size: uint256
+
 
 event Approval:
     _owner: indexed(address)
@@ -82,6 +86,8 @@ getApproved: public(HashMap[uint256, address])
 child_token_data: HashMap[address, HashMap[uint256, ChildTokenData]]
 
 call_proxy: address
+
+tokens: HashMap[uint256, TokenData]
 
 
 @external
@@ -157,6 +163,10 @@ def _receive_child(
 
     self.child_token_data[_child_contract][_child_token_id].is_held = True
     self.child_token_data[_child_contract][_child_token_id].parent_token_id = _token_id
+
+    length: uint256 = self.tokens[_token_id].child_contracts_size
+    self.tokens[_token_id].child_contracts[length] = _child_contract
+    self.tokens[_token_id].child_contracts_size += 1
 
     log ReceivedChild(_from, _token_id, _child_contract, _child_token_id)
 
@@ -674,3 +684,15 @@ def tokenOfOwnerByIndex(_owner: address, _index: uint256) -> uint256:
     assert _index < self.balanceOf[_owner]  # dev: Invalid index
 
     return self.owner_to_tokens[_owner][_index]
+
+
+@view
+@external
+def totalChildContracts(_tokenId: uint256) -> uint256:
+    """
+    @notice Get the total number of child contracts with tokens that
+        are owned by tokenId.
+    @param _tokenId The parent token of child tokens in child contracts
+    @return uint256 The total number of child contracts with tokens owned by tokenId.
+    """
+    return self.tokens[_tokenId].child_contracts_size

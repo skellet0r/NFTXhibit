@@ -38,6 +38,9 @@ struct TokenData:
     child_contracts: address[MAX_UINT256]
     child_contracts_size: uint256
 
+struct ChildContractData:
+    child_tokens: uint256[MAX_UINT256]
+    child_tokens_size: uint256
 
 event Approval:
     _owner: indexed(address)
@@ -88,6 +91,8 @@ child_token_data: HashMap[address, HashMap[uint256, ChildTokenData]]
 call_proxy: address
 
 tokens: HashMap[uint256, TokenData]
+# token id => child contract => child data
+child_contracts: HashMap[uint256, HashMap[address, ChildContractData]]
 
 
 @external
@@ -167,6 +172,10 @@ def _receive_child(
     length: uint256 = self.tokens[_token_id].child_contracts_size
     self.tokens[_token_id].child_contracts[length] = _child_contract
     self.tokens[_token_id].child_contracts_size += 1
+
+    length = self.child_contracts[_token_id][_child_contract].child_tokens_size
+    self.child_contracts[_token_id][_child_contract].child_tokens[length] = _child_token_id
+    self.child_contracts[_token_id][_child_contract].child_tokens_size += 1
 
     log ReceivedChild(_from, _token_id, _child_contract, _child_token_id)
 
@@ -693,7 +702,7 @@ def totalChildContracts(_tokenId: uint256) -> uint256:
     @notice Get the total number of child contracts with tokens that
         are owned by tokenId.
     @param _tokenId The parent token of child tokens in child contracts
-    @return uint256 The total number of child contracts with tokens owned by tokenId.
+    @return The total number of child contracts with tokens owned by tokenId.
     """
     return self.tokens[_tokenId].child_contracts_size
 
@@ -705,8 +714,22 @@ def childContractByIndex(_tokenId: uint256, _index: uint256) -> address:
     @notice Get child contract by tokenId and index
     @param _tokenId The parent token of child tokens in child contract
     @param _index The index position of the child contract
-    @return childContract The contract found at the tokenId and index.
+    @return The contract found at the tokenId and index.
     """
     assert _index < self.tokens[_tokenId].child_contracts_size  # dev: Invalid index
 
     return self.tokens[_tokenId].child_contracts[_index]
+
+
+@view
+@external
+def totalChildTokens(_tokenId: uint256, _childContract: address) -> uint256:
+    """
+    @notice Get the total number of child tokens owned by tokenId that exist in a
+        child contract.
+    @param _tokenId The parent token of child tokens
+    @param _childContract The child contract containing the child tokens
+    @return The total number of child tokens found in child contract that are
+        owned by tokenId.
+    """
+    return self.child_contracts[_tokenId][_childContract].child_tokens_size

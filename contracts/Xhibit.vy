@@ -240,17 +240,17 @@ def _transferFrom(_from: address, _to: address, _tokenId: uint256):
     """
     assert _to != ZERO_ADDRESS  # dev: Transfers to ZERO_ADDRESS not permitted
 
-    # next available index in _to tokens array
-    last_index_to: uint256 = self.balanceOf[_to]
-
     self.getApproved[_tokenId] = ZERO_ADDRESS
     self.balanceOf[_from] -= 1
     self.balanceOf[_to] += 1
     self.ownerOf[_tokenId] = _to
 
+    # next available index in _to tokens array
+    last_index_to: uint256 = self.balanceOf[_to] - 1
+
     # local variables to decrease gas costs of accessing storage
     index: uint256 = self.owner_to_token_to_index[_from][_tokenId]
-    last_index: uint256 = self.balanceOf[_to]
+    last_index: uint256 = self.balanceOf[_from]
 
     # if the positioin of _tokenId in _from's token array is not
     # the last token, overwrite the position with the last token

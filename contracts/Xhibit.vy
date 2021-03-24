@@ -205,7 +205,7 @@ def _root_owner_of_child(_childContract: address, _childTokenId: uint256) -> add
         if root_owner_address != self:
             break
         root_owner_address, parent_token_id = self._owner_of_child(
-            _childContract, _childTokenId
+            root_owner_address, parent_token_id
         )
 
     if root_owner_address.is_contract:

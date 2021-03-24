@@ -696,3 +696,17 @@ def totalChildContracts(_tokenId: uint256) -> uint256:
     @return uint256 The total number of child contracts with tokens owned by tokenId.
     """
     return self.tokens[_tokenId].child_contracts_size
+
+
+@view
+@external
+def childContractByIndex(_tokenId: uint256, _index: uint256) -> address:
+    """
+    @notice Get child contract by tokenId and index
+    @param _tokenId The parent token of child tokens in child contract
+    @param _index The index position of the child contract
+    @return childContract The contract found at the tokenId and index.
+    """
+    assert _index < self.tokens[_tokenId].child_contracts_size  # dev: Invalid index
+
+    return self.tokens[_tokenId].child_contracts[_index]

@@ -21,3 +21,18 @@ $ python -m venv venv
 $ source ./venv/bin/activate
 $ pip install -r requirements.txt
 ```
+
+### Running the Test Suite
+
+To run the suite of unit tests, along with outputting coverage and gas estimates run the following command.
+
+```bash
+$ brownie test -CG
+```
+
+### Contracts Overview
+
+The primary contract is `contracts/Xhibit.vy`, written in vyper and following the ERC-721 and ERC-998 standards along with the associated enumeration extensions respectively.
+This contract is supplemented with `contracts/CallProxy.sol`, written in solidity, which provides a simple wrapper function `tryStaticCall`. This wrapper function
+is required because vyper does not yet have error catching functionality (think of `try ... except ...` syntax in python), which is required for the `rootOwnerOf` function to work
+according to the ERC-998 standard.

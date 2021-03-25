@@ -110,3 +110,9 @@ class StateMachine:
                     for j in range(self.state.total_child_tokens(i, child_contract))
                 }
                 assert child_tokens == self.state.child_tokens(i, child_contract)
+
+
+def test_state(alice, ERC721, state_machine, xhibit):
+    state_machine(
+        StateMachine, alice, ERC721, xhibit, settings=dict(stateful_step_count=25)
+    )

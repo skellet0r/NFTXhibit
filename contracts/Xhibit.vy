@@ -183,7 +183,9 @@ def _receive_child(
     # register the token in the _token_id._child_contract data
     # add child token to _token_id._child_contract child tokens array
     length: uint256 = self.child_contracts[_token_id][_child_contract].child_tokens_size
-    self.child_contracts[_token_id][_child_contract].child_tokens[length] = _child_token_id
+    self.child_contracts[_token_id][_child_contract].child_tokens[
+        length
+    ] = _child_token_id
     self.child_contracts[_token_id][_child_contract].child_tokens_size += 1
 
     self.child_token_data[_child_contract][_child_token_id].position = length
@@ -594,9 +596,7 @@ def rootOwnerOf(_tokenId: uint256) -> bytes32:
     @return The root owner at the top of tree of tokens and ERC998 magic value.
     """
     magic_val: bytes32 = convert(ERC998_MAGIC_VALUE, bytes32)
-    root_owner_address: address = self._root_owner_of_child(
-        ZERO_ADDRESS, _tokenId
-    )
+    root_owner_address: address = self._root_owner_of_child(ZERO_ADDRESS, _tokenId)
     return_value: uint256 = bitwise_or(
         convert(magic_val, uint256), convert(root_owner_address, uint256)
     )
@@ -635,9 +635,7 @@ def transferChild(
         self.getApproved[parent_token_id] = ZERO_ADDRESS
 
     self._remove_child(parent_token_id, _childContract, _childTokenId)
-    ERC721(_childContract).transferFrom(
-        self, _to, _childTokenId
-    )  # dev: bad response
+    ERC721(_childContract).transferFrom(self, _to, _childTokenId)  # dev: bad response
 
     log TransferChild(_fromTokenId, _to, _childContract, _childTokenId)
 

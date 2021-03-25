@@ -211,8 +211,8 @@ def _remove_child(
     self.child_token_data[_childContract][_childTokenId].parent_token_id = empty(
         uint256
     )
-    self.child_token_data[_childContract][_childTokenId].is_held = empty(bool)
-    self.child_token_data[_childContract][_childTokenId].position = empty(uint256)
+    self.child_token_data[_childContract][_childTokenId].is_held = False
+    self.child_token_data[_childContract][_childTokenId].position = 0
 
     # reduce the size of the child contract array of tokens
     self.child_contracts[_from_token_id][_childContract].child_tokens_size -= 1
@@ -239,7 +239,7 @@ def _remove_child(
     # lastly we zero out the last token position in the token array
     self.child_contracts[_from_token_id][_childContract].child_tokens[
         last_child_token_index
-    ] = empty(uint256)
+    ] = 0
 
     # handle removing a contract if all the tokens are gone
     if self.child_contracts[_from_token_id][_childContract].child_tokens_size == 0:
@@ -248,8 +248,8 @@ def _remove_child(
             _childContract
         ].position
         # empty the data
-        self.child_contracts[_from_token_id][_childContract].is_held = empty(bool)
-        self.child_contracts[_from_token_id][_childContract].position = empty(uint256)
+        self.child_contracts[_from_token_id][_childContract].is_held = False
+        self.child_contracts[_from_token_id][_childContract].position = 0
 
         self.tokens[_from_token_id].child_contracts_size -= 1
         last_contract_index: uint256 = self.tokens[_from_token_id].child_contracts_size
@@ -261,7 +261,7 @@ def _remove_child(
             self.child_contracts[_from_token_id][
                 last_contract
             ].position = contract_index
-        self.tokens[_from_token_id].child_contracts[last_contract_index] = empty(address)
+        self.tokens[_from_token_id].child_contracts[last_contract_index] = ZERO_ADDRESS
 
 
 @view
@@ -280,8 +280,8 @@ def _root_owner_of_child(_childContract: address, _childTokenId: uint256) -> add
     @param The child token ID
     @return The root owner address
     """
-    root_owner_address: address = empty(address)
-    parent_token_id: uint256 = empty(uint256)
+    root_owner_address: address = ZERO_ADDRESS
+    parent_token_id: uint256 = 0
 
     if _childContract == ZERO_ADDRESS:
         root_owner_address = self.ownerOf[_childTokenId]
@@ -350,8 +350,8 @@ def _transferFrom(_from: address, _to: address, _tokenId: uint256):
         self.owner_to_token_to_index[_from][last_token] = index
 
     # set the _tokenId data to 0 in _from
-    self.owner_to_token_to_index[_from][_tokenId] = empty(uint256)
-    self.owner_to_tokens[_from][last_index] = empty(uint256)
+    self.owner_to_token_to_index[_from][_tokenId] = 0
+    self.owner_to_tokens[_from][last_index] = 0
 
     # set the _tokenId data to appropriate values in _to
     self.owner_to_token_to_index[_to][_tokenId] = last_index_to
@@ -551,8 +551,8 @@ def ownerOfChild(_childContract: address, _childTokenId: uint256) -> (bytes32, u
     @return The parent address of the parent token and ERC998 magic value
     @return The parent tokenId of _tokenId
     """
-    parent_address: address = empty(address)
-    parent_token_id: uint256 = empty(uint256)
+    parent_address: address = ZERO_ADDRESS
+    parent_token_id: uint256 = 0
 
     magic_val: bytes32 = convert(ERC998_MAGIC_VALUE, bytes32)
     parent_address, parent_token_id = self._owner_of_child(
@@ -617,8 +617,8 @@ def transferChild(
     @param _childContract The ERC721 contract of the child token.
     @param _childTokenId The tokenId of the token that is being transferred.
     """
-    parent_addr: address = empty(address)
-    parent_token_id: uint256 = empty(uint256)
+    parent_addr: address = ZERO_ADDRESS
+    parent_token_id: uint256 = 0
     parent_addr, parent_token_id = self._owner_of_child(_childContract, _childTokenId)
 
     root_owner: address = self._root_owner_of_child(_childContract, _childTokenId)
@@ -660,8 +660,8 @@ def safeTransferChild(
     @param _childTokenId The tokenId of the token that is being transferred.
     @param _data Additional data with no specified format
     """
-    parent_addr: address = empty(address)
-    parent_token_id: uint256 = empty(uint256)
+    parent_addr: address = ZERO_ADDRESS
+    parent_token_id: uint256 = 0
     parent_addr, parent_token_id = self._owner_of_child(_childContract, _childTokenId)
 
     root_owner: address = self._root_owner_of_child(_childContract, _childTokenId)
@@ -706,8 +706,8 @@ def transferChildToParent(
     @param _childTokenId The token that is being transferred.
     @param _data Additional data with no specified format
     """
-    parent_addr: address = empty(address)
-    parent_token_id: uint256 = empty(uint256)
+    parent_addr: address = ZERO_ADDRESS
+    parent_token_id: uint256 = 0
     parent_addr, parent_token_id = self._owner_of_child(_childContract, _childTokenId)
 
     root_owner: address = self._root_owner_of_child(_childContract, _childTokenId)

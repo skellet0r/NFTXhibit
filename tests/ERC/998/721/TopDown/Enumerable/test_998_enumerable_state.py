@@ -113,6 +113,4 @@ class StateMachine:
 
 
 def test_state(alice, ERC721, state_machine, xhibit):
-    state_machine(
-        StateMachine, alice, ERC721, xhibit, settings=dict(stateful_step_count=25)
-    )
+    state_machine(StateMachine, alice, ERC721, xhibit)

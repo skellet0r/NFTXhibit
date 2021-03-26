@@ -238,7 +238,7 @@ def _receive_child(
 
 
 @internal
-def _receive_token(_from: address, _token_id: uint256, _contract: address, _value: uint256):
+def _receive_erc20(_from: address, _token_id: uint256, _contract: address, _value: uint256):
     """
     @dev Internal function for receiving ERC20 tokens
     """
@@ -914,7 +914,7 @@ def tokenFallback(_from: address, _value: uint256, _data: Bytes[32]):
     )  # dev: Tokens were not transferred to contract
 
     token_id: uint256 = convert(_data, uint256)
-    self._receive_token(_from, token_id, msg.sender, _value)
+    self._receive_erc20(_from, token_id, msg.sender, _value)
 
 
 @external
@@ -936,4 +936,4 @@ def getERC20(
 
     ERC20(_erc20Contract).transferFrom(_from, self, _value)  # dev: bad response
 
-    self._receive_token(_from, _tokenId, _erc20Contract, _value)
+    self._receive_erc20(_from, _tokenId, _erc20Contract, _value)

@@ -915,3 +915,25 @@ def tokenFallback(_from: address, _value: uint256, _data: Bytes[32]):
 
     token_id: uint256 = convert(_data, uint256)
     self._receive_token(_from, token_id, msg.sender, _value)
+
+
+@external
+def getERC20(
+    _from: address, _tokenId: uint256, _erc20Contract: address, _value: uint256
+):
+    """
+    @notice Get ERC20 tokens from ERC20 contract.
+    @dev Contract must be approved prior to calling this function
+    @param _from The current owner address of the ERC20 tokens that are being transferred.
+    @param _tokenId The token to transfer the ERC20 tokens to.
+    @param _erc20Contract The ERC20 token contract
+    @param _value The number of ERC20 tokens to transfer
+    """
+    assert _from == msg.sender  # dev: Caller is not account owner
+    assert (
+        ERC20(_erc20Contract).allowance(_from, self) >= _value
+    )  # dev: Contract was not given enough approval
+
+    ERC20(_erc20Contract).transferFrom(_from, self, _value)  # dev: bad response
+
+    self._receive_token(_from, _tokenId, _erc20Contract, _value)

@@ -10,8 +10,14 @@
 from vyper.interfaces import ERC721
 
 
+# Constants
+
+
 TOKEN_RECEIVED: constant(Bytes[4]) = 0x150b7a02
 ERC998_MAGIC_VALUE: constant(Bytes[4]) = 0xcd740db5
+
+
+# Interfaces
 
 
 interface CallProxy:
@@ -32,6 +38,9 @@ interface ERC998ERC721BottomUp:
     ): nonpayable
 
 
+# Structs
+
+
 struct TokenData:
     child_contracts: address[MAX_UINT256]
     child_contracts_size: uint256
@@ -46,6 +55,9 @@ struct ChildTokenData:
     parent_token_id: uint256
     is_held: bool
     position: uint256
+
+
+# Events
 
 
 event Approval:
@@ -80,12 +92,17 @@ event TransferChild:
     _childTokenId: uint256
 
 
+# State Variables
+
+
+# ERC-721 Enumerable Extension
 totalSupply: public(uint256)
 owner_to_tokens: HashMap[address, uint256[MAX_UINT256]]
 owner_to_token_to_index: HashMap[address, HashMap[uint256, uint256]]
 
-owner: public(address)
+owner: public(address)  # ERC-173
 
+# ERC-721
 balanceOf: public(HashMap[address, uint256])
 ownerOf: public(HashMap[uint256, address])
 isApprovedForAll: public(HashMap[address, HashMap[address, bool]])
@@ -93,6 +110,7 @@ getApproved: public(HashMap[uint256, address])
 
 call_proxy: address
 
+# ERC-998 ERC-721 Top Down Composable Enumerable Extension
 tokens: HashMap[uint256, TokenData]
 # token id => child contract => child data
 child_contracts: HashMap[uint256, HashMap[address, ChildContractData]]
@@ -104,6 +122,9 @@ child_token_data: HashMap[address, HashMap[uint256, ChildTokenData]]
 def __init__(_call_proxy: address):
     self.call_proxy = _call_proxy
     self.owner = msg.sender
+
+
+# Internal Helper Functions
 
 
 @internal
@@ -363,6 +384,9 @@ def _transferFrom(_from: address, _to: address, _tokenId: uint256):
     log Transfer(_from, _to, _tokenId)
 
 
+# ERC-173
+
+
 @external
 def transferOwnership(_newOwner: address):
     """
@@ -378,6 +402,9 @@ def transferOwnership(_newOwner: address):
     log OwnershipTransferred(previous_owner, _newOwner)
 
 
+# Utility
+
+
 @external
 def mint(_to: address):
     """
@@ -389,6 +416,9 @@ def mint(_to: address):
     assert msg.sender == self.owner  # dev: Caller is not owner
 
     self._mint(_to)
+
+
+# ERC-721
 
 
 @external
@@ -487,6 +517,46 @@ def safeTransferFrom(
         assert (
             return_value == TOKEN_RECEIVED
         )  # dev: Invalid ERC721TokenReceiver response
+
+
+# ERC-721 Enumerable Extension
+
+
+@view
+@external
+def tokenByIndex(_index: uint256) -> uint256:
+    """
+    @notice Enumerate valid NFTs
+    @dev Throws if `_index` >= `totalSupply()`. Since token identifiers
+        are generated incrementally from 0, this just returns the arg
+        given.
+    @param _index A value less than `totalSupply()`
+    @return The token identifier for the `_index`th NFT,
+        (sort order not specified)
+    """
+    assert _index < self.totalSupply  # dev: Invalid index
+
+    return _index
+
+
+@view
+@external
+def tokenOfOwnerByIndex(_owner: address, _index: uint256) -> uint256:
+    """
+    @notice Enumerate NFTs assigned to an owner
+    @dev Throws if `_index` >= `balanceOf(_owner)` or if
+        `_owner` is the zero address, representing invalid NFTs.
+    @param _owner An address where we are interested in NFTs owned by them
+    @param _index A counter less than `balanceOf(_owner)`
+    @return The token identifier for the `_index`th NFT assigned to `_owner`,
+        (sort order not specified)
+    """
+    assert _index < self.balanceOf[_owner]  # dev: Invalid index
+
+    return self.owner_to_tokens[_owner][_index]
+
+
+# ERC-998 ERC-721 Top Down Composable
 
 
 @external
@@ -730,38 +800,7 @@ def transferChildToParent(
     log TransferChild(_fromTokenId, _toContract, _childContract, _childTokenId)
 
 
-@view
-@external
-def tokenByIndex(_index: uint256) -> uint256:
-    """
-    @notice Enumerate valid NFTs
-    @dev Throws if `_index` >= `totalSupply()`. Since token identifiers
-        are generated incrementally from 0, this just returns the arg
-        given.
-    @param _index A value less than `totalSupply()`
-    @return The token identifier for the `_index`th NFT,
-        (sort order not specified)
-    """
-    assert _index < self.totalSupply  # dev: Invalid index
-
-    return _index
-
-
-@view
-@external
-def tokenOfOwnerByIndex(_owner: address, _index: uint256) -> uint256:
-    """
-    @notice Enumerate NFTs assigned to an owner
-    @dev Throws if `_index` >= `balanceOf(_owner)` or if
-        `_owner` is the zero address, representing invalid NFTs.
-    @param _owner An address where we are interested in NFTs owned by them
-    @param _index A counter less than `balanceOf(_owner)`
-    @return The token identifier for the `_index`th NFT assigned to `_owner`,
-        (sort order not specified)
-    """
-    assert _index < self.balanceOf[_owner]  # dev: Invalid index
-
-    return self.owner_to_tokens[_owner][_index]
+# ERC-998 ERC-721 Top Down Composable Enumerable Extension
 
 
 @view

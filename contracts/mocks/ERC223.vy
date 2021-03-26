@@ -41,7 +41,7 @@ def transfer(_to : address, _value : uint256, _data: Bytes[32] = b"") -> bool:
     self.balanceOf[msg.sender] -= _value
     self.balanceOf[_to] += _value
     if _to.is_contract:
-        ERC223Receiver(_to).tokenFallback(msg.sender, _value, _data)
+        ERC223Receiver(_to).tokenFallback(msg.sender, _value, _data)  # dev: bad response
     log Transfer(msg.sender, _to, _value)
     return True
 

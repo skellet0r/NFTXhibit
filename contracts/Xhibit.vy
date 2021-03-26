@@ -80,6 +80,12 @@ event ReceivedChild:
     _childContract: indexed(address)
     _childTokenId: uint256
 
+event ReceivedERC20:
+    _from: indexed(address)
+    _toTokenId: indexed(uint256)
+    _erc20Contract: indexed(address)
+    _value: uint256
+
 event Transfer:
     _from: indexed(address)
     _to: indexed(address)
@@ -90,6 +96,12 @@ event TransferChild:
     _to: indexed(address)
     _childContract: indexed(address)
     _childTokenId: uint256
+
+event TransferERC20:
+    _fromTokenId: indexed(uint256)
+    _to: indexed(address)
+    _erc20Contract: indexed(address)
+    _value: uint256
 
 
 # State Variables

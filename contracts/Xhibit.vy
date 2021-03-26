@@ -48,6 +48,8 @@ interface ERC998ERC721BottomUp:
 struct TokenData:
     child_contracts: address[MAX_UINT256]
     child_contracts_size: uint256
+    erc20_contracts: address[MAX_UINT256]
+    erc20_contracts_size: uint256
 
 struct ChildContractData:
     child_tokens: uint256[MAX_UINT256]
@@ -249,6 +251,13 @@ def _receive_erc20(_from: address, _token_id: uint256, _contract: address, _valu
 
     if _value == 0:
         return
+
+    # append the contract to tokens list of erc20 contracts
+    # if the initial balance held is 0
+    if self.balanceOfERC20[_token_id][_contract] == 0:
+        index: uint256 = self.tokens[_token_id].erc20_contracts_size
+        self.tokens[_token_id].erc20_contracts[index] = _contract
+        self.tokens[_token_id].erc20_contracts_size += 1
 
     self.global_balances[_contract] += _value
     self.balanceOfERC20[_token_id][_contract] += _value
@@ -1010,3 +1019,17 @@ def transferERC223(
     assert ERC223(_erc223Contract).transfer(_to, _value, _data)  # dev: bad response
 
     log TransferERC20(_tokenId, _to, _erc223Contract, _value)
+
+
+# ERC-998 ERC-20 Top Down Composable
+
+
+@view
+@external
+def totalERC20Contracts(_tokenId: uint256) -> uint256:
+    """
+    @notice Get the number of ERC20 contracts that token owns ERC20 tokens from
+    @param _tokenId The token that owns ERC20 tokens.
+    @return uint256 The number of ERC20 contracts
+    """
+    return self.tokens[_tokenId].erc20_contracts_size

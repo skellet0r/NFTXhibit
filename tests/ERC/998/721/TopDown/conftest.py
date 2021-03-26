@@ -7,8 +7,8 @@ def composable_top_down(alice, ComposableTopDown):
 
 
 @pytest.fixture(scope="module")
-def composable_bottom_down(alice, ComposableBottomDown):
-    return alice.deploy(ComposableBottomDown)
+def composable_bottom_up(alice, ComposableBottomUp):
+    return alice.deploy(ComposableBottomUp)
 
 
 @pytest.fixture(scope="module")
@@ -22,8 +22,8 @@ def nft_no_auth(alice, ERC721NoAuth):
 
 
 @pytest.fixture(scope="module", autouse=True)
-def setup(alice, composable_bottom_down, nft, nft_no_auth, nft_transfer_last, xhibit):
-    composable_bottom_down._mint_for_testing(alice, {"from": alice})
+def setup(alice, composable_bottom_up, nft, nft_no_auth, nft_transfer_last, xhibit):
+    composable_bottom_up._mint_for_testing(alice, {"from": alice})
     nft_no_auth._mint_for_testing(alice, {"from": alice})
     nft_transfer_last._mint_for_testing(alice, {"from": alice})
     nft._mint_for_testing(alice, {"from": alice})

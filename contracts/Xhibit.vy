@@ -24,6 +24,9 @@ ERC998_MAGIC_VALUE: constant(Bytes[4]) = 0xcd740db5
 interface CallProxy:
     def tryStaticCall(_target: address, _calldata: Bytes[96]) -> Bytes[32]: view
 
+interface ERC223:
+    def transfer(_to: address, _value: uint256, _data: Bytes[1024]) -> bool: nonpayable
+
 interface ERC721TokenReceiver:
     def onERC721Received(
         _operator: address, _from: address, _tokenId: uint256, _data: Bytes[1024]
@@ -976,3 +979,34 @@ def transferERC20(_tokenId: uint256, _to: address, _erc20Contract: address, _val
     assert ERC20(_erc20Contract).transfer(_to, _value)  # dev: bad response
 
     log TransferERC20(_tokenId, _to, _erc20Contract, _value)
+
+
+@external
+def transferERC223(
+    _tokenId: uint256,
+    _to: address,
+    _erc223Contract: address,
+    _value: uint256,
+    _data: Bytes[1024],
+):
+    """
+    @notice Transfer ERC20 tokens to address or ERC20 top-down composable
+    @param _tokenId The token to transfer from
+    @param _to The address to send the ERC20 tokens to
+    @param _erc223Contract The ERC223 token contract
+    @param _value The number of ERC20 tokens to transfer
+    @param _data Additional data with no specified format, can be used to specify tokenId to transfer to
+    """
+    assert _to != ZERO_ADDRESS  # dev: Transfers to ZERO_ADDRESS not permitted
+    root_owner: address = self._root_owner_of_child(ZERO_ADDRESS, _tokenId)
+    assert (
+        msg.sender == root_owner
+        or self.isApprovedForAll[root_owner][msg.sender]
+        or self.getApproved[_tokenId] == msg.sender
+    )  # dev: Caller is neither owner nor operator nor approved
+
+    self._remove_erc20(_tokenId, _erc223Contract, _value)
+
+    assert ERC223(_erc223Contract).transfer(_to, _value, _data)  # dev: bad response
+
+    log TransferERC20(_tokenId, _to, _erc223Contract, _value)

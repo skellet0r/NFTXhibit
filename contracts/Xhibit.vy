@@ -1,9 +1,11 @@
 # @version 0.2.11
 """
-@title An collection of NFT Exhibits
+@title A collection of NFT Exhibits
 @license GPL-3.0
 @author Edward Amor
 @notice You can use this contract to manage owned NFT exhibits
+@dev A staticcall proxy contract has to be deployed prior to this contract's
+    deployment
 """
 from vyper.interfaces import ERC721
 
@@ -12,13 +14,13 @@ TOKEN_RECEIVED: constant(Bytes[4]) = 0x150b7a02
 ERC998_MAGIC_VALUE: constant(Bytes[4]) = 0xcd740db5
 
 
+interface CallProxy:
+    def tryStaticCall(_target: address, _calldata: Bytes[96]) -> Bytes[32]: view
+
 interface ERC721TokenReceiver:
     def onERC721Received(
         _operator: address, _from: address, _tokenId: uint256, _data: Bytes[1024]
     ) -> Bytes[4]: nonpayable
-
-interface CallProxy:
-    def tryStaticCall(_target: address, _calldata: Bytes[96]) -> Bytes[32]: view
 
 interface ERC998ERC721BottomUp:
     def transferToParent(
@@ -89,14 +91,13 @@ ownerOf: public(HashMap[uint256, address])
 isApprovedForAll: public(HashMap[address, HashMap[address, bool]])
 getApproved: public(HashMap[uint256, address])
 
-# child token contract => child token id => child token data
-child_token_data: HashMap[address, HashMap[uint256, ChildTokenData]]
-
 call_proxy: address
 
 tokens: HashMap[uint256, TokenData]
 # token id => child contract => child data
 child_contracts: HashMap[uint256, HashMap[address, ChildContractData]]
+# child token contract => child token id => child token data
+child_token_data: HashMap[address, HashMap[uint256, ChildTokenData]]
 
 
 @external

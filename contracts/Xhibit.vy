@@ -345,10 +345,13 @@ def _remove_erc20(_token_id: uint256, _contract: address, _value: uint256):
         self.child_contracts[_token_id][_contract].erc20_balance >= _value
     )  # dev: Token balance not sufficient for transfer
 
+    if _value == 0:
+        return
+
     self.child_contracts[_token_id][_contract].erc20_balance -= _value
     self.global_balances[_contract] -= _value
 
-    if self.child_contracts[_token_id][_contract].erc20_balance != 0:
+    if self.child_contracts[_token_id][_contract].erc20_balance > 0:
         return
 
     self.tokens[_token_id].erc20_contracts_size -= 1
@@ -360,6 +363,7 @@ def _remove_erc20(_token_id: uint256, _contract: address, _value: uint256):
         last_erc20_contract: address = self.tokens[_token_id].erc20_contracts[last_index]
         self.tokens[_token_id].erc20_contracts[index] = last_erc20_contract
         self.child_contracts[_token_id][last_erc20_contract].position = index
+
     self.tokens[_token_id].erc20_contracts[last_index] = ZERO_ADDRESS
     self.child_contracts[_token_id][_contract].position = 0
     self.child_contracts[_token_id][_contract].is_held = False

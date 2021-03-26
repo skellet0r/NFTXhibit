@@ -322,6 +322,19 @@ def _remove_child(
         self.tokens[_from_token_id].child_contracts[last_contract_index] = ZERO_ADDRESS
 
 
+@internal
+def _remove_erc20(_token_id: uint256, _contract: address, _value: uint256):
+    """
+    @dev Internal function for updating state when ERC20 tokens are transferred
+    """
+    assert (
+        self.balanceOfERC20[_token_id][_contract] >= _value
+    )  # dev: Token balance not sufficient for transfer
+
+    self.balanceOfERC20[_token_id][_contract] -= _value
+    self.global_balances[_contract] -= _value
+
+
 @view
 @internal
 def _root_owner_of_child(_childContract: address, _childTokenId: uint256) -> address:
@@ -909,6 +922,8 @@ def tokenFallback(_from: address, _value: uint256, _data: Bytes[32]):
     @param _data Up to the first 32 bytes contains an integer which is the receiving tokenId
     """
     assert len(_data) > 0  # dev: _data must contain the receiving tokenId
+    # TODO: Handle users sending ERC20 funds to this contract, thereby breaking
+    # this assertion.
     assert (
         ERC20(msg.sender).balanceOf(self) == self.global_balances[msg.sender] + _value
     )  # dev: Tokens were not transferred to contract
@@ -934,6 +949,30 @@ def getERC20(
         ERC20(_erc20Contract).allowance(_from, self) >= _value
     )  # dev: Contract was not given enough approval
 
-    ERC20(_erc20Contract).transferFrom(_from, self, _value)  # dev: bad response
+    assert ERC20(_erc20Contract).transferFrom(_from, self, _value)  # dev: bad response
 
     self._receive_erc20(_from, _tokenId, _erc20Contract, _value)
+
+
+@external
+def transferERC20(_tokenId: uint256, _to: address, _erc20Contract: address, _value: uint256):
+    """
+    @notice Transfer ERC20 tokens to address
+    @param _tokenId The token to transfer from
+    @param _to The address to send the ERC20 tokens to
+    @param _erc20Contract The ERC20 contract
+    @param _value The number of ERC20 tokens to transfer
+    """
+    assert _to != ZERO_ADDRESS  # dev: Transfers to ZERO_ADDRESS not permitted
+    root_owner: address = self._root_owner_of_child(ZERO_ADDRESS, _tokenId)
+    assert (
+        msg.sender == root_owner
+        or self.isApprovedForAll[root_owner][msg.sender]
+        or self.getApproved[_tokenId] == msg.sender
+    )  # dev: Caller is neither owner nor operator nor approved
+
+    self._remove_erc20(_tokenId, _erc20Contract, _value)
+
+    assert ERC20(_erc20Contract).transfer(_to, _value)  # dev: bad response
+
+    log TransferERC20(_tokenId, _to, _erc20Contract, _value)

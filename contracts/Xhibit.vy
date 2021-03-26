@@ -133,7 +133,7 @@ child_token_data: HashMap[address, HashMap[uint256, ChildTokenData]]
 # tracks globally this contract's token balance
 # used when asserting a token was received
 global_balances: HashMap[address, uint256]
-token_balances: HashMap[uint256, HashMap[address, uint256]]
+balanceOfERC20: public(HashMap[uint256, HashMap[address, uint256]])
 
 
 @external
@@ -248,7 +248,7 @@ def _receive_token(_from: address, _token_id: uint256, _contract: address, _valu
         return
 
     self.global_balances[_contract] += _value
-    self.token_balances[_token_id][_contract] += _value
+    self.balanceOfERC20[_token_id][_contract] += _value
 
     log ReceivedERC20(_from, _token_id, _contract, _value)
 

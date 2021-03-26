@@ -1033,3 +1033,18 @@ def totalERC20Contracts(_tokenId: uint256) -> uint256:
     @return uint256 The number of ERC20 contracts
     """
     return self.tokens[_tokenId].erc20_contracts_size
+
+
+@view
+@external
+def erc20ContractByIndex(_tokenId: uint256, _index: uint256) -> address:
+    """
+    @notice Get an ERC20 contract that token owns by index
+    @dev Throws if index is invalid
+    @param _tokenId The token that owns ERC20 tokens.
+    @param _index The index position of the ERC20 contract.
+    @return address The ERC20 contract
+    """
+    assert _index < self.tokens[_tokenId].erc20_contracts_size  # dev: Invalid index
+
+    return self.tokens[_tokenId].erc20_contracts[_index]

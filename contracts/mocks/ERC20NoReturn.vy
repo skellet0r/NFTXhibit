@@ -4,6 +4,10 @@
 """
 
 
+interface ERC223Receiver:
+    def tokenFallback(_from: address, _value: uint256, _data: Bytes[32]): nonpayable
+
+
 event Transfer:
     _from: indexed(address)
     _to: indexed(address)
@@ -30,16 +34,17 @@ def __init__(_name: String[64], _symbol: String[32], _decimals: uint256):
     self.symbol = _symbol
     self.decimals = _decimals
 
-
 @external
-def transfer(_to : address, _value : uint256) -> bool:
+def transfer(_to : address, _value : uint256, _data: Bytes[32] = b""):
     self.balanceOf[msg.sender] -= _value
     self.balanceOf[_to] += _value
+    if _to.is_contract:
+        ERC223Receiver(_to).tokenFallback(msg.sender, _value, _data)  # dev: bad response
     log Transfer(msg.sender, _to, _value)
 
 
 @external
-def transferFrom(_from : address, _to : address, _value : uint256) -> bool:
+def transferFrom(_from : address, _to : address, _value : uint256):
     self.balanceOf[_from] -= _value
     self.balanceOf[_to] += _value
     self.allowance[_from][msg.sender] -= _value
@@ -47,13 +52,13 @@ def transferFrom(_from : address, _to : address, _value : uint256) -> bool:
 
 
 @external
-def approve(_spender : address, _value : uint256) -> bool:
+def approve(_spender : address, _value : uint256):
     self.allowance[msg.sender][_spender] = _value
     log Approval(msg.sender, _spender, _value)
 
 
 @external
-def _mint_for_testing(_target: address, _value: uint256) -> bool:
+def _mint_for_testing(_target: address, _value: uint256):
     self.totalSupply += _value
     self.balanceOf[_target] += _value
     log Transfer(ZERO_ADDRESS, _target, _value)

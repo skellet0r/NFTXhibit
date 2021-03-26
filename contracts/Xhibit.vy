@@ -52,6 +52,7 @@ struct TokenData:
     erc20_contracts_size: uint256
 
 struct ChildContractData:
+    erc20_balance: uint256
     child_tokens: uint256[MAX_UINT256]
     child_tokens_size: uint256
     position: uint256
@@ -138,7 +139,6 @@ child_token_data: HashMap[address, HashMap[uint256, ChildTokenData]]
 # tracks globally this contract's token balance
 # used when asserting a token was received
 global_balances: HashMap[address, uint256]
-balanceOfERC20: public(HashMap[uint256, HashMap[address, uint256]])
 
 
 @external
@@ -254,13 +254,14 @@ def _receive_erc20(_from: address, _token_id: uint256, _contract: address, _valu
 
     # append the contract to tokens list of erc20 contracts
     # if the initial balance held is 0
-    if self.balanceOfERC20[_token_id][_contract] == 0:
+    if self.child_contracts[_token_id][_contract].erc20_balance == 0:
         index: uint256 = self.tokens[_token_id].erc20_contracts_size
+        self.child_contracts[_token_id][_contract].position = index
         self.tokens[_token_id].erc20_contracts[index] = _contract
         self.tokens[_token_id].erc20_contracts_size += 1
 
     self.global_balances[_contract] += _value
-    self.balanceOfERC20[_token_id][_contract] += _value
+    self.child_contracts[_token_id][_contract].erc20_balance += _value
 
     log ReceivedERC20(_from, _token_id, _contract, _value)
 
@@ -340,10 +341,10 @@ def _remove_erc20(_token_id: uint256, _contract: address, _value: uint256):
     @dev Internal function for updating state when ERC20 tokens are transferred
     """
     assert (
-        self.balanceOfERC20[_token_id][_contract] >= _value
+        self.child_contracts[_token_id][_contract].erc20_balance >= _value
     )  # dev: Token balance not sufficient for transfer
 
-    self.balanceOfERC20[_token_id][_contract] -= _value
+    self.child_contracts[_token_id][_contract].erc20_balance -= _value
     self.global_balances[_contract] -= _value
 
 
@@ -924,6 +925,18 @@ def childTokenByIndex(
 # ERC-998 ERC-20 Top Down Composable
 
 
+@view
+@external
+def balanceOfERC20(_tokenId: uint256, _erc20Contract: address) -> uint256:
+    """
+    @notice Look up the balance of ERC20 tokens for a specific token and ERC20 contract
+    @param _tokenId The token that owns the ERC20 tokens
+    @param _erc20Contract The ERC20 contract
+    @return The number of ERC20 tokens owned by a token from an ERC20 contract
+    """
+    return self.child_contracts[_tokenId][_erc20Contract].erc20_balance
+
+
 @external
 def tokenFallback(_from: address, _value: uint256, _data: Bytes[32]):
     """
@@ -1004,7 +1017,8 @@ def transferERC223(
     @param _to The address to send the ERC20 tokens to
     @param _erc223Contract The ERC223 token contract
     @param _value The number of ERC20 tokens to transfer
-    @param _data Additional data with no specified format, can be used to specify tokenId to transfer to
+    @param _data Additional data with no specified format, can be used to specify
+        tokenId to transfer to
     """
     assert _to != ZERO_ADDRESS  # dev: Transfers to ZERO_ADDRESS not permitted
     root_owner: address = self._root_owner_of_child(ZERO_ADDRESS, _tokenId)

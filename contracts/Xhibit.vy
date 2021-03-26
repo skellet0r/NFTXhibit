@@ -7,6 +7,7 @@
 @dev A staticcall proxy contract has to be deployed prior to this contract's
     deployment
 """
+from vyper.interfaces import ERC20
 from vyper.interfaces import ERC721
 
 
@@ -129,6 +130,11 @@ child_contracts: HashMap[uint256, HashMap[address, ChildContractData]]
 # child token contract => child token id => child token data
 child_token_data: HashMap[address, HashMap[uint256, ChildTokenData]]
 
+# tracks globally this contract's token balance
+# used when asserting a token was received
+global_balances: HashMap[address, uint256]
+token_balances: HashMap[uint256, HashMap[address, uint256]]
+
 
 @external
 def __init__(_call_proxy: address):
@@ -229,6 +235,22 @@ def _receive_child(
     self.child_token_data[_child_contract][_child_token_id].parent_token_id = _token_id
 
     log ReceivedChild(_from, _token_id, _child_contract, _child_token_id)
+
+
+@internal
+def _receive_token(_from: address, _token_id: uint256, _contract: address, _value: uint256):
+    """
+    @dev Internal function for receiving ERC20 tokens
+    """
+    assert self.ownerOf[_token_id] != ZERO_ADDRESS  # dev: Recipient token non-existent
+
+    if _value == 0:
+        return
+
+    self.global_balances[_contract] += _value
+    self.token_balances[_token_id][_contract] += _value
+
+    log ReceivedERC20(_from, _token_id, _contract, _value)
 
 
 @internal
@@ -872,3 +894,24 @@ def childTokenByIndex(
     )  # dev: Invalid index
 
     return self.child_contracts[_tokenId][_childContract].child_tokens[_index]
+
+
+# ERC-998 ERC-20 Top Down Composable
+
+
+@external
+def tokenFallback(_from: address, _value: uint256, _data: Bytes[32]):
+    """
+    @notice A token receives ERC20 tokens
+    @dev This is called by a
+    @param _from The prior owner of the ERC20 tokens
+    @param _value The number of ERC20 tokens received
+    @param _data Up to the first 32 bytes contains an integer which is the receiving tokenId
+    """
+    assert len(_data) > 0  # dev: _data must contain the receiving tokenId
+    assert (
+        ERC20(msg.sender).balanceOf(self) == self.global_balances[msg.sender] + _value
+    )  # dev: Tokens were not transferred to contract
+
+    token_id: uint256 = convert(_data, uint256)
+    self._receive_token(_from, token_id, msg.sender, _value)

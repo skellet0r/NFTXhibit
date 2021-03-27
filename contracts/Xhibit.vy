@@ -16,6 +16,7 @@ from vyper.interfaces import ERC721
 
 TOKEN_RECEIVED: constant(Bytes[4]) = 0x150b7a02
 ERC998_MAGIC_VALUE: constant(Bytes[4]) = 0xcd740db5
+ERC1363_TOKENS_RECEIVED: constant(Bytes[4]) = 0x88a7ca5c
 
 
 # Interfaces
@@ -1078,3 +1079,34 @@ def erc20ContractByIndex(_tokenId: uint256, _index: uint256) -> address:
     assert _index < self.tokens[_tokenId].erc20_contracts_size  # dev: Invalid index
 
     return self.tokens[_tokenId].erc20_contracts[_index]
+
+
+# ERC-1363 Receiver
+
+
+@external
+def onTransferReceived(
+    _operator: address, _from: address, _value: uint256, _data: Bytes[32]
+) -> Bytes[4]:
+    """
+    @notice Handle the receipt of ERC1363 tokens
+    @dev Any ERC1363 smart contract calls this function after a `transfer` or a `transferFrom`.
+        This function MAY throw to revert and reject the transfer. Return of other than the magic
+        value MUST result in the transaction being reverted.
+        Note: the token contract address is always the message sender.
+    @param _operator address The address which called `transferAndCall` or `transferFromAndCall`
+        function
+    @param _from The address which the tokens are transferred from
+    @param _value The amount of tokens transferred
+    @param _data First 32 bytes will contain the receiving token_id
+    @return `bytes4(keccak256("onTransferReceived(address,address,uint256,bytes)"))`
+        unless throwing
+    """
+    assert len(_data) > 0  # dev: _data must contain the receiving tokenId
+    assert (
+        ERC20(msg.sender).balanceOf(self) >= self.global_balances[msg.sender] + _value
+    )  # dev: Tokens were not transferred to contract
+
+    token_id: uint256 = convert(_data, uint256)
+    self._receive_erc20(_from, token_id, msg.sender, _value)
+    return ERC1363_TOKENS_RECEIVED

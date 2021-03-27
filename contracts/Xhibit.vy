@@ -966,7 +966,7 @@ def tokenFallback(_from: address, _value: uint256, _data: Bytes[32]):
     # TODO: Handle users sending ERC20 funds to this contract, thereby breaking
     # this assertion.
     assert (
-        ERC20(msg.sender).balanceOf(self) == self.global_balances[msg.sender] + _value
+        ERC20(msg.sender).balanceOf(self) >= self.global_balances[msg.sender] + _value
     )  # dev: Tokens were not transferred to contract
 
     token_id: uint256 = convert(_data, uint256)

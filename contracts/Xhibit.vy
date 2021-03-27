@@ -56,7 +56,6 @@ struct ChildContractData:
     child_tokens: uint256[MAX_UINT256]
     child_tokens_size: uint256
     position: uint256
-    is_held: bool
 
 struct ChildTokenData:
     parent_token_id: uint256
@@ -216,14 +215,13 @@ def _receive_child(
     ].is_held  # dev: Child token already possessed
 
     # if the child contract isn't registered, register it in _token_id
-    if not self.child_contracts[_token_id][_child_contract].is_held:
+    if self.child_contracts[_token_id][_child_contract].child_tokens_size == 0:
         # add child contract to _token_id child contracts array
         length: uint256 = self.tokens[_token_id].child_contracts_size
         self.tokens[_token_id].child_contracts[length] = _child_contract
         self.tokens[_token_id].child_contracts_size += 1
 
         self.child_contracts[_token_id][_child_contract].position = length
-        self.child_contracts[_token_id][_child_contract].is_held = True
 
     # register the token in the _token_id._child_contract data
     # add child token to _token_id._child_contract child tokens array
@@ -256,7 +254,6 @@ def _receive_erc20(_from: address, _token_id: uint256, _contract: address, _valu
     # if the initial balance held is 0
     if self.child_contracts[_token_id][_contract].erc20_balance == 0:
         index: uint256 = self.tokens[_token_id].erc20_contracts_size
-        self.child_contracts[_token_id][_contract].is_held = True
         self.child_contracts[_token_id][_contract].position = index
         self.tokens[_token_id].erc20_contracts[index] = _contract
         self.tokens[_token_id].erc20_contracts_size += 1
@@ -320,7 +317,6 @@ def _remove_child(
             _childContract
         ].position
         # empty the data
-        self.child_contracts[_from_token_id][_childContract].is_held = False
         self.child_contracts[_from_token_id][_childContract].position = 0
 
         self.tokens[_from_token_id].child_contracts_size -= 1
@@ -366,7 +362,6 @@ def _remove_erc20(_token_id: uint256, _contract: address, _value: uint256):
 
     self.tokens[_token_id].erc20_contracts[last_index] = ZERO_ADDRESS
     self.child_contracts[_token_id][_contract].position = 0
-    self.child_contracts[_token_id][_contract].is_held = False
 
 
 @view

@@ -430,33 +430,38 @@ def _transferFrom(_from: address, _to: address, _tokenId: uint256):
     """
     assert _to != ZERO_ADDRESS  # dev: Transfers to ZERO_ADDRESS not permitted
 
+    # we should reset approvals regardless
     self.getApproved[_tokenId] = ZERO_ADDRESS
-    self.balanceOf[_from] -= 1
-    self.balanceOf[_to] += 1
-    self.ownerOf[_tokenId] = _to
 
-    # next available index in _to tokens array
-    last_index_to: uint256 = self.balanceOf[_to] - 1
+    # if we are doing a noop we skip this
+    if _from != _to:
 
-    # local variables to decrease gas costs of accessing storage
-    index: uint256 = self.owner_to_token_to_index[_from][_tokenId]
-    last_index: uint256 = self.balanceOf[_from]
+        self.balanceOf[_from] -= 1
+        self.balanceOf[_to] += 1
+        self.ownerOf[_tokenId] = _to
 
-    # if the position of _tokenId in _from's token array is not
-    # the last token, overwrite the position with the last token
-    # in the array an change the last_token's position tracker
-    if index < last_index:
-        last_token: uint256 = self.owner_to_tokens[_from][last_index]
-        self.owner_to_tokens[_from][index] = last_token
-        self.owner_to_token_to_index[_from][last_token] = index
+        # next available index in _to tokens array
+        last_index_to: uint256 = self.balanceOf[_to] - 1
 
-    # set the _tokenId data to 0 in _from
-    self.owner_to_token_to_index[_from][_tokenId] = 0
-    self.owner_to_tokens[_from][last_index] = 0
+        # local variables to decrease gas costs of accessing storage
+        index: uint256 = self.owner_to_token_to_index[_from][_tokenId]
+        last_index: uint256 = self.balanceOf[_from]
 
-    # set the _tokenId data to appropriate values in _to
-    self.owner_to_token_to_index[_to][_tokenId] = last_index_to
-    self.owner_to_tokens[_to][last_index_to] = _tokenId
+        # if the position of _tokenId in _from's token array is not
+        # the last token, overwrite the position with the last token
+        # in the array an change the last_token's position tracker
+        if index < last_index:
+            last_token: uint256 = self.owner_to_tokens[_from][last_index]
+            self.owner_to_tokens[_from][index] = last_token
+            self.owner_to_token_to_index[_from][last_token] = index
+
+        # set the _tokenId data to 0 in _from
+        self.owner_to_token_to_index[_from][_tokenId] = 0
+        self.owner_to_tokens[_from][last_index] = 0
+
+        # set the _tokenId data to appropriate values in _to
+        self.owner_to_token_to_index[_to][_tokenId] = last_index_to
+        self.owner_to_tokens[_to][last_index_to] = _tokenId
 
     log Transfer(_from, _to, _tokenId)
 

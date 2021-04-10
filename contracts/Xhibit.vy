@@ -660,6 +660,12 @@ def onERC721Received(
     @return `bytes4(keccak256("onERC721Received(address,address,uint256,bytes)"))`
         unless throwing
     """
+    # TODO: Prevent arbitrary users from sending NFTs to an Exhibit.
+    # A spoofed ERC-721 contract can call this method and use
+    # the root owner address as the _operator param. We want to make this
+    # simple so that the caller only has to complete one transaction.
+    # We can use the `ecrecover` function and have users/callers include it
+    # in the _data variable
     assert len(_data) > 0  # dev: _data must contain the receiving tokenId
     assert (
         ERC721(msg.sender).ownerOf(_childTokenId) == self
@@ -683,6 +689,8 @@ def getChild(
     @param _childContract The ERC721 contract of the child token
     @param _childTokenId The tokenId of the child token
     """
+    # Prevent arbitrary callers from adding an NFT to an exhibit
+    # requires the caller be the root owner or root owner operator
     assert ERC721(_childContract).getApproved(_childTokenId) == self or ERC721(
         _childContract
     ).isApprovedForAll(
